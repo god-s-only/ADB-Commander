@@ -1,5 +1,6 @@
 package com.adbcommand.app.core
 
+import com.adbcommand.app.domain.models.ShellResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -26,8 +27,3 @@ class ShellCommandsExecution {
         }
     }
 }
-data class ShellResult(
-    val output: String,
-    val error: String,
-    val success: Boolean
-)
