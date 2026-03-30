@@ -1,4 +1,4 @@
-package com.adbcommand.app.ui.theme
+package com.adbcommand.app.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 
