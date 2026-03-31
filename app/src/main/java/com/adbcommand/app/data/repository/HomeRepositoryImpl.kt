@@ -48,4 +48,19 @@ class HomeRepositoryImpl @Inject constructor(private val shellExecutor: ShellCom
             Result.failure(e)
         }
     }
+
+    override suspend fun testConnection(): Result<String> {
+        return try {
+            val result = shellExecutor.run(Commands.pingConnection())
+            if(!result.success){
+                return Result.failure(Exception(result.error.ifBlank { "Unknown Shell Error" }))
+            }
+            val connection = result.output.ifBlank {
+                return Result.failure(Exception("Could not reach server. No Internet"))
+            }
+            Result.success(connection)
+        }catch (e: Exception){
+            Result.failure(e)
+        }
+    }
 }

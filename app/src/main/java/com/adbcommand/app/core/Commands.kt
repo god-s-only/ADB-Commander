@@ -6,4 +6,7 @@ object Commands {
 
     fun generatePairCode() =
         "cmd bluetooth_manager generate-pairing-code"
+
+    fun pingConnection() =
+        "ping -c 1 8.8.8.8"
 }
