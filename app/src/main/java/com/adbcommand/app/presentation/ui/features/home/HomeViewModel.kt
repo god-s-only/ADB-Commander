@@ -28,7 +28,7 @@ class HomeViewModel @Inject constructor(private val getDeviceIpUseCase: GetDevic
                 onFailure = { e ->
                     _state.update {
                         it.copy(
-                            error = e.message
+                            deviceIp = e.message ?: ""
                         )
                     }
                 }
