@@ -30,4 +30,22 @@ class HomeRepositoryImpl @Inject constructor(private val shellExecutor: ShellCom
             Result.failure(Exception("Error getting device ip: ${e.message}"))
         }
     }
+
+    override suspend fun generatePairingCode(): Result<String> {
+        return try {
+            val result = shellExecutor.run(Commands.generatePairCode())
+            if (!result.success) {
+                Log.e("HomeRepository", "generatePairingCode failed: ${result.error}")
+                return Result.failure(Exception(result.error.ifBlank { "Unknown shell error" }))
+            }
+
+            val code = result.output.ifBlank {
+                return Result.failure(Exception("Command succeeded but returned no output"))
+            }
+            Result.success(code)
+        } catch (e: Exception) {
+            Log.e("HomeRepository", "Unexpected error in generatePairingCode", e)
+            Result.failure(e)
+        }
+    }
 }

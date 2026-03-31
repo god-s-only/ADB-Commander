@@ -16,7 +16,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.adbcommand.app.core.Routes
 import com.adbcommand.app.presentation.theme.ADBCommanderTheme
-import com.adbcommand.app.presentation.ui.features.home.HomeScreen
+import com.adbcommand.app.presentation.ui.features.home.AdbCommanderHome
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 NavHost(navController = navController, startDestination = Routes.HOME){
                     composable(Routes.HOME) {
-                        HomeScreen(navController = navController)
+                        AdbCommanderHome()
                     }
                 }
             }
