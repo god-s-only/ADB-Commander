@@ -1,17 +1,66 @@
 package com.adbcommand.app.data.repository
 
+import android.util.Log
 import com.adbcommand.app.core.Commands
 import com.adbcommand.app.core.ShellCommandsExecution
 import com.adbcommand.app.domain.repository.HomeRepository
 import jakarta.inject.Inject
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.net.Inet4Address
+import java.net.NetworkInterface
 
 class HomeRepositoryImpl @Inject constructor(private val shellExecutor: ShellCommandsExecution): HomeRepository {
     override suspend fun getDeviceIp(): Result<String> {
         return try {
-            val output = shellExecutor.run(Commands.wirelessIp())
-            Result.success( Regex("inet ([0-9.]+)").find(output.output)?.groupValues?.get(1) ?: "Unknown")
+            val ip = withContext(Dispatchers.IO) {
+                NetworkInterface.getNetworkInterfaces()
+                    ?.asSequence()
+                    ?.flatMap { it.inetAddresses.asSequence() }
+                    ?.firstOrNull { address ->
+                        !address.isLoopbackAddress &&
+                                address is Inet4Address
+                    }
+                    ?.hostAddress
+            } ?: return Result.failure(Exception("No IP address found"))
+
+            Result.success(ip)
+        } catch (e: Exception) {
+            Log.e("HomeRepository", "Error getting device ip", e)
+            Result.failure(Exception("Error getting device ip: ${e.message}"))
+        }
+    }
+
+    override suspend fun generatePairingCode(): Result<String> {
+        return try {
+            val result = shellExecutor.run(Commands.generatePairCode())
+            if (!result.success) {
+                Log.e("HomeRepository", "generatePairingCode failed: ${result.error}")
+                return Result.failure(Exception(result.error.ifBlank { "Unknown shell error" }))
+            }
+
+            val code = result.output.ifBlank {
+                return Result.failure(Exception("Command succeeded but returned no output"))
+            }
+            Result.success(code)
+        } catch (e: Exception) {
+            Log.e("HomeRepository", "Unexpected error in generatePairingCode", e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun testConnection(): Result<String> {
+        return try {
+            val result = shellExecutor.run(Commands.pingConnection())
+            if(!result.success){
+                return Result.failure(Exception(result.error.ifBlank { "Unknown Shell Error" }))
+            }
+            val connection = result.output.ifBlank {
+                return Result.failure(Exception("Could not reach server. No Internet"))
+            }
+            Result.success(connection)
         }catch (e: Exception){
-            Result.failure(Exception("Error getting device ip"))
+            Result.failure(e)
         }
     }
 }
