@@ -1,6 +1,8 @@
 package com.adbcommand.app.di
 
 import com.adbcommand.app.core.ShellCommandsExecution
+import com.adbcommand.app.data.repository.HomeRepositoryImpl
+import com.adbcommand.app.domain.repository.HomeRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -9,10 +11,11 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object AppModule {
+object RepositoryModule {
     @Provides
     @Singleton
-    fun provideShellCommandsExecution(): ShellCommandsExecution {
-        return ShellCommandsExecution()
+    fun provideHomeRepository(shellExecutor: ShellCommandsExecution): HomeRepository{
+        return HomeRepositoryImpl(shellExecutor)
     }
+
 }
