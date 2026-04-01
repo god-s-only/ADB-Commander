@@ -1,28 +1,18 @@
 package com.adbcommand.app.data.repository
 
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import com.adbcommand.app.core.AdbKeyStoreManager
 import com.adbcommand.app.core.AdbPairingClient
 import com.adbcommand.app.core.Commands
 import com.adbcommand.app.core.PairingResult
 import com.adbcommand.app.core.ShellCommandsExecution
 import com.adbcommand.app.domain.models.PairingCredentials
-import com.adbcommand.app.domain.models.PairingResult
 import com.adbcommand.app.domain.repository.PairingRepository
 import jakarta.inject.Inject
 
-/**
- * Concrete implementation of [PairingRepository].
- *
- * Pairing flow
- * ────────────
- * 1. User supplies IP, pairing-port and 6-digit code (from Wireless Debugging).
- * 2. [AdbPairingClient] opens a TLS socket to <ip>:<pairingPort> and runs the
- *    SPAKE2+ exchange.  On success the device saves our RSA public key.
- * 3. The device opens its ADB port (default 5555).
- * 4. We issue `adb connect <ip>:<adbPort>` so the ADB daemon acknowledges the
- *    connection.
- */
+
 class PairingRepositoryImpl @Inject constructor(
     private val keyStoreManager: AdbKeyStoreManager,
     private val shellExecutor: ShellCommandsExecution
@@ -40,8 +30,8 @@ class PairingRepositoryImpl @Inject constructor(
         )
     }
 
-    // ── PairingRepository ────────────────────────────────────────────────────
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override suspend fun pairDevice(credentials: PairingCredentials): PairingResult {
         Log.d(TAG, "Starting pairing → ${credentials.ipAddress}:${credentials.port}")
 
