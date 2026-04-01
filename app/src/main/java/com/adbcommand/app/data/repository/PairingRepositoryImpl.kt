@@ -3,7 +3,7 @@ package com.adbcommand.app.data.repository
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
-import com.adbcommand.app.core.AdbKeyStoreManager
+import com.adbcommand.app.data.local.AdbKeyStoreManager
 import com.adbcommand.app.core.AdbPairingClient
 import com.adbcommand.app.core.Commands
 import com.adbcommand.app.core.PairingResult

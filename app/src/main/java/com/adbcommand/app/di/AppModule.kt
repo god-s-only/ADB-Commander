@@ -1,7 +1,7 @@
 package com.adbcommand.app.di
 
 import android.content.Context
-import com.adbcommand.app.core.AdbKeyStoreManager
+import com.adbcommand.app.data.local.AdbKeyStoreManager
 import com.adbcommand.app.core.ShellCommandsExecution
 import com.adbcommand.app.data.repository.PairingRepositoryImpl
 import com.adbcommand.app.domain.repository.PairingRepository

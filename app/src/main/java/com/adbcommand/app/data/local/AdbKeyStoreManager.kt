@@ -1,11 +1,13 @@
-package com.adbcommand.app.core
+package com.adbcommand.app.data.local
 
 import android.content.Context
 import android.util.Base64
 import android.util.Log
+import java.math.BigInteger
 import java.security.KeyPairGenerator
 import java.security.KeyStore
 import java.security.PrivateKey
+import java.security.PublicKey
 import java.security.cert.Certificate
 import java.util.Date
 import javax.security.auth.x500.X500Principal
@@ -58,8 +60,8 @@ class AdbKeyStoreManager(private val context: Context) {
     @Suppress("UNCHECKED_CAST")
     private fun buildSelfSignedCertificate(
         privateKey: PrivateKey,
-        publicKey: java.security.PublicKey
-    ): java.security.cert.Certificate {
+        publicKey: PublicKey
+    ): Certificate {
         return try {
             val subject = X500Principal("CN=ADB Commander, O=AdbCommandApp")
 
@@ -75,14 +77,14 @@ class AdbKeyStoreManager(private val context: Context) {
                     .newInstance("SHA256WithRSA")
 
             val signer = contentSignerBuilderClass
-                .getMethod("build", java.security.PrivateKey::class.java)
+                .getMethod("build", PrivateKey::class.java)
                 .invoke(contentSignerBuilder, privateKey)
 
             val certBuilderClass =
                 Class.forName("org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder")
             val certBuilder = certBuilderClass.getConstructors().first().newInstance(
                 subject,
-                java.math.BigInteger.valueOf(System.currentTimeMillis()),
+                BigInteger.valueOf(System.currentTimeMillis()),
                 Date(System.currentTimeMillis() - 1000L),
                 Date(System.currentTimeMillis() + 10L * 365 * 24 * 60 * 60 * 1000),
                 subject,
@@ -98,7 +100,7 @@ class AdbKeyStoreManager(private val context: Context) {
                 Class.forName("org.bouncycastle.cert.jcajce.JcaX509CertificateConverter")
             val converter = converterClass.getDeclaredConstructor().newInstance()
             converterClass.getMethod("getCertificate", holderClass)
-                .invoke(converter, holder) as java.security.cert.Certificate
+                .invoke(converter, holder) as Certificate
 
         } catch (e: Exception) {
 
@@ -120,11 +122,11 @@ class AdbKeyStoreManager(private val context: Context) {
     }
 }
 
-private class StubCertificate(private val pub: java.security.PublicKey) :
-    java.security.cert.Certificate("STUB") {
+private class StubCertificate(private val pub: PublicKey) :
+    Certificate("STUB") {
     override fun getEncoded() = pub.encoded
-    override fun verify(key: java.security.PublicKey) = Unit
-    override fun verify(key: java.security.PublicKey, sigProvider: String) = Unit
+    override fun verify(key: PublicKey) = Unit
+    override fun verify(key: PublicKey, sigProvider: String) = Unit
     override fun toString() = "StubCertificate"
     override fun getPublicKey() = pub
 }
