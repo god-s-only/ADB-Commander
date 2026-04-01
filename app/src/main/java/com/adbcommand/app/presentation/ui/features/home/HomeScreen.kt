@@ -71,7 +71,6 @@ fun AdbCommanderHome() {
                 }
             }
 
-            // --- PAIRING SECTION ---
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
@@ -86,7 +85,6 @@ fun AdbCommanderHome() {
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        // Generate Button
                         Button(
                             onClick = { /* Generate Logic */ },
                             modifier = Modifier.weight(1f).height(52.dp),
@@ -101,7 +99,6 @@ fun AdbCommanderHome() {
                             Text("Generate", fontWeight = FontWeight.Bold)
                         }
 
-                        // QR Button
                         FilledTonalButton(
                             onClick = { /* Launch Camera */ },
                             modifier = Modifier.weight(1f).height(52.dp),
