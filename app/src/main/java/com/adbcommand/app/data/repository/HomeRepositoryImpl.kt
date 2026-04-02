@@ -10,7 +10,10 @@ import kotlinx.coroutines.withContext
 import java.net.Inet4Address
 import java.net.NetworkInterface
 
-class HomeRepositoryImpl @Inject constructor(private val shellExecutor: ShellCommandsExecution): HomeRepository {
+class HomeRepositoryImpl @Inject constructor(
+    private val shellExecutor: ShellCommandsExecution
+) : HomeRepository {
+
     override suspend fun getDeviceIp(): Result<String> {
         return try {
             val ip = withContext(Dispatchers.IO) {
@@ -18,8 +21,7 @@ class HomeRepositoryImpl @Inject constructor(private val shellExecutor: ShellCom
                     ?.asSequence()
                     ?.flatMap { it.inetAddresses.asSequence() }
                     ?.firstOrNull { address ->
-                        !address.isLoopbackAddress &&
-                                address is Inet4Address
+                        !address.isLoopbackAddress && address is Inet4Address
                     }
                     ?.hostAddress
             } ?: return Result.failure(Exception("No IP address found"))
@@ -31,18 +33,49 @@ class HomeRepositoryImpl @Inject constructor(private val shellExecutor: ShellCom
         }
     }
 
+
+    override suspend fun getPairingPort(): Result<String> {
+        return try {
+            val result = shellExecutor.run(Commands.getPairingPort())
+            val port = result.output.trim()
+
+            if (port.isBlank() || port == "0") {
+                Result.failure(Exception("Pairing port not available — is Wireless Debugging enabled?"))
+            } else {
+                Result.success(port)
+            }
+        } catch (e: Exception) {
+            Log.e("HomeRepository", "Error getting pairing port", e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getAdbPort(): Result<String> {
+        return try {
+            val result = shellExecutor.run(Commands.getAdbPort())
+            val port = result.output.trim()
+
+            if (port.isBlank() || port == "-1" || port == "0") {
+                Result.success("5555")
+            } else {
+                Result.success(port)
+            }
+        } catch (e: Exception) {
+            Log.e("HomeRepository", "Error getting ADB port", e)
+            Result.success("5555")
+        }
+    }
+
     override suspend fun generatePairingCode(): Result<String> {
         return try {
             val result = shellExecutor.run(Commands.generatePairCode())
-            if (!result.success) {
-                Log.e("HomeRepository", "generatePairingCode failed: ${result.error}")
-                return Result.failure(Exception(result.error.ifBlank { "Unknown shell error" }))
-            }
+            val code = result.output.trim()
 
-            val code = result.output.ifBlank {
-                return Result.failure(Exception("Command succeeded but returned no output"))
+            if (code.isBlank()) {
+                Result.failure(Exception("Code not readable — check Wireless Debugging screen"))
+            } else {
+                Result.success(code)
             }
-            Result.success(code)
         } catch (e: Exception) {
             Log.e("HomeRepository", "Unexpected error in generatePairingCode", e)
             Result.failure(e)
@@ -52,14 +85,16 @@ class HomeRepositoryImpl @Inject constructor(private val shellExecutor: ShellCom
     override suspend fun testConnection(): Result<String> {
         return try {
             val result = shellExecutor.run(Commands.pingConnection())
-            if(!result.success){
-                return Result.failure(Exception(result.error.ifBlank { "Unknown Shell Error" }))
+            if (!result.success) {
+                return Result.failure(
+                    Exception(result.error.ifBlank { "Ping failed" })
+                )
             }
-            val connection = result.output.ifBlank {
-                return Result.failure(Exception("Could not reach server. No Internet"))
+            val output = result.output.ifBlank {
+                return Result.failure(Exception("No response from server"))
             }
-            Result.success(connection)
-        }catch (e: Exception){
+            Result.success(output)
+        } catch (e: Exception) {
             Result.failure(e)
         }
     }

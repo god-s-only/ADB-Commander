@@ -1,10 +1,7 @@
 package com.adbcommand.app.di
 
 import android.content.Context
-import com.adbcommand.app.data.local.AdbKeyStoreManager
 import com.adbcommand.app.core.ShellCommandsExecution
-import com.adbcommand.app.data.repository.PairingRepositoryImpl
-import com.adbcommand.app.domain.repository.PairingRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -21,17 +18,4 @@ object AppModule {
         return ShellCommandsExecution()
     }
 
-    @Provides
-    @Singleton
-    fun provideAdbKeyStoreManager(
-        @ApplicationContext context: Context
-    ): AdbKeyStoreManager = AdbKeyStoreManager(context)
-
-
-    @Provides
-    @Singleton
-    fun providePairingRepository(
-        keyStoreManager: AdbKeyStoreManager,
-        shellExecutor: ShellCommandsExecution
-    ): PairingRepository = PairingRepositoryImpl(keyStoreManager, shellExecutor)
 }
