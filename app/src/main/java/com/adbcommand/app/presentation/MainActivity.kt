@@ -17,7 +17,6 @@ import androidx.navigation.compose.rememberNavController
 import com.adbcommand.app.core.Routes
 import com.adbcommand.app.presentation.theme.ADBCommanderTheme
 import com.adbcommand.app.presentation.ui.features.home.AdbCommanderHome
-import com.adbcommand.app.presentation.ui.features.pairing.PairingScreen
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -28,12 +27,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             ADBCommanderTheme {
                 val navController = rememberNavController()
-                NavHost(navController = navController, startDestination = Routes.PAIRING_SCREEN){
+                NavHost(navController = navController, startDestination = Routes.HOME){
                     composable(Routes.HOME) {
                         AdbCommanderHome()
-                    }
-                    composable(Routes.PAIRING_SCREEN) {
-                        PairingScreen()
                     }
                 }
             }
