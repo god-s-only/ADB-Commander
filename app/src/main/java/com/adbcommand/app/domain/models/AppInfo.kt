@@ -9,3 +9,8 @@ data class AppInfo(
     val versionName: String,
     val isSystemApp: Boolean
 )
+
+sealed class AppActionResult {
+    data class Success(val message: String) : AppActionResult()
+    data class Failure(val message: String) : AppActionResult()
+}
