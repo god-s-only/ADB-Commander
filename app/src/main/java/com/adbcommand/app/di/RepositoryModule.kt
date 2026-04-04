@@ -1,5 +1,6 @@
 package com.adbcommand.app.di
 
+import android.content.Context
 import com.adbcommand.app.core.ShellCommandsExecution
 import com.adbcommand.app.data.repository.CommandsRepositoryImpl
 import com.adbcommand.app.data.repository.DeviceInfoRepositoryImpl
@@ -10,6 +11,7 @@ import com.adbcommand.app.domain.repository.HomeRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
@@ -30,7 +32,7 @@ object RepositoryModule {
 
     @Provides
     @Singleton
-    fun provideDeviceInfoRepository(): DeviceInfoRepository {
-        return DeviceInfoRepositoryImpl()
+    fun provideDeviceInfoRepository(shellExecutor: ShellCommandsExecution, @ApplicationContext context: Context): DeviceInfoRepository {
+        return DeviceInfoRepositoryImpl(shellExecutor, context)
     }
 }
