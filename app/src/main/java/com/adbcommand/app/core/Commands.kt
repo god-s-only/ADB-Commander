@@ -31,4 +31,22 @@ object Commands {
     fun batteryDump() = "dumpsys battery"
 
     fun wifiDump() = "dumpsys wifi | grep 'mWifiInfo'"
+
+    fun killApp(packageName: String) =
+        "am force-stop $packageName"
+
+    fun clearData(packageName: String) =
+        "pm clear $packageName"
+
+    fun getApkPath(packageName: String) =
+        "pm path $packageName"
+
+    fun copyApkToDownloads(apkPath: String, packageName: String) =
+        "cp $apkPath /sdcard/Download/${packageName}.apk"
+
+    fun uninstall(packageName: String) =
+        "pm uninstall $packageName"
+
+    fun launchApp(packageName: String) =
+        "monkey -p $packageName -c android.intent.category.LAUNCHER 1"
 }
