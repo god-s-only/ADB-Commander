@@ -2,8 +2,10 @@ package com.adbcommand.app.di
 
 import com.adbcommand.app.core.ShellCommandsExecution
 import com.adbcommand.app.data.repository.CommandsRepositoryImpl
+import com.adbcommand.app.data.repository.DeviceInfoRepositoryImpl
 import com.adbcommand.app.data.repository.HomeRepositoryImpl
 import com.adbcommand.app.domain.repository.CommandsRepository
+import com.adbcommand.app.domain.repository.DeviceInfoRepository
 import com.adbcommand.app.domain.repository.HomeRepository
 import dagger.Module
 import dagger.Provides
@@ -26,4 +28,9 @@ object RepositoryModule {
         return CommandsRepositoryImpl()
     }
 
+    @Provides
+    @Singleton
+    fun provideDeviceInfoRepository(): DeviceInfoRepository {
+        return DeviceInfoRepositoryImpl()
+    }
 }
