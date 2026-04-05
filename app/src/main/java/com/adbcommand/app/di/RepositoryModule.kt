@@ -2,9 +2,11 @@ package com.adbcommand.app.di
 
 import android.content.Context
 import com.adbcommand.app.core.ShellCommandsExecution
+import com.adbcommand.app.data.repository.AppManagerRepositoryImpl
 import com.adbcommand.app.data.repository.CommandsRepositoryImpl
 import com.adbcommand.app.data.repository.DeviceInfoRepositoryImpl
 import com.adbcommand.app.data.repository.HomeRepositoryImpl
+import com.adbcommand.app.domain.repository.AppManagerRepository
 import com.adbcommand.app.domain.repository.CommandsRepository
 import com.adbcommand.app.domain.repository.DeviceInfoRepository
 import com.adbcommand.app.domain.repository.HomeRepository
@@ -34,5 +36,11 @@ object RepositoryModule {
     @Singleton
     fun provideDeviceInfoRepository(shellExecutor: ShellCommandsExecution, @ApplicationContext context: Context): DeviceInfoRepository {
         return DeviceInfoRepositoryImpl(shellExecutor, context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAppManagerRepository(shellExecutor: ShellCommandsExecution, @ApplicationContext context: Context): AppManagerRepository {
+        return AppManagerRepositoryImpl(context, shellExecutor)
     }
 }
