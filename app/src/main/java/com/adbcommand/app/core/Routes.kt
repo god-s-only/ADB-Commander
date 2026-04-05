@@ -4,4 +4,6 @@ object Routes {
     const val HOME = "home"
     const val COMMANDS_SCREEN = "commands"
     const val DEVICE_INFO_SCREEN = "device_info_screen"
+    const val APP_MANAGER_SCREEN = "app_manager_screen"
+
 }

@@ -17,6 +17,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.adbcommand.app.core.Routes
 import com.adbcommand.app.presentation.theme.ADBCommanderTheme
+import com.adbcommand.app.presentation.ui.features.appmanager.AppManagerScreen
 import com.adbcommand.app.presentation.ui.features.commands.CommandsScreen
 import com.adbcommand.app.presentation.ui.features.deviceinfo.DeviceInfoScreen
 import com.adbcommand.app.presentation.ui.features.home.AdbCommanderHome
@@ -30,7 +31,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             ADBCommanderTheme {
                 val navController = rememberNavController()
-                NavHost(navController = navController, startDestination = Routes.DEVICE_INFO_SCREEN){
+                NavHost(navController = navController, startDestination = Routes.HOME){
                     composable(Routes.HOME) {
                         AdbCommanderHome(onShowCommands = { ip, adbPort, pairingPort, code ->
                             navController.navigate(
@@ -70,6 +71,9 @@ class MainActivity : ComponentActivity() {
                     }
                     composable(Routes.DEVICE_INFO_SCREEN) {
                         DeviceInfoScreen({})
+                    }
+                    composable(Routes.APP_MANAGER_SCREEN) {
+                        AppManagerScreen({})
                     }
                 }
             }
