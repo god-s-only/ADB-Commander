@@ -5,4 +5,5 @@ sealed class HomeEvent {
     object GenerateCode: HomeEvent()
     object TestConnection: HomeEvent()
     object DismissStatus: HomeEvent()
+    object RequestShizukuPermission: HomeEvent()
 }

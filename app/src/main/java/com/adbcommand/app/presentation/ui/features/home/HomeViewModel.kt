@@ -3,6 +3,8 @@ package com.adbcommand.app.presentation.ui.features.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.adbcommand.app.core.Commands
+import com.adbcommand.app.data.remote.ShizukuManager
+import com.adbcommand.app.data.remote.ShizukuState
 import com.adbcommand.app.domain.usecase.home.GetPairingCodeUseCase
 import com.adbcommand.app.domain.usecase.home.LoadDeviceInfoUseCase
 import com.adbcommand.app.domain.usecase.home.TestConnectionUseCase
@@ -22,11 +24,14 @@ data class ConnectionResult(val status: ConnectionStatus, val message: String)
 class HomeViewModel @Inject constructor(
     private val loadDeviceInfo: LoadDeviceInfoUseCase,
     private val getPairingCode: GetPairingCodeUseCase,
-    private val testConnection: TestConnectionUseCase
+    private val testConnection: TestConnectionUseCase,
+    private val shizukuManager: ShizukuManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeScreenState())
     val uiState: StateFlow<HomeScreenState> = _uiState.asStateFlow()
+
+    val shizukuState: StateFlow<ShizukuState> = shizukuManager.state
 
     init {
         onEvent(HomeEvent.LoadInfo)
@@ -38,6 +43,7 @@ class HomeViewModel @Inject constructor(
             is HomeEvent.GenerateCode -> generateCode()
             is HomeEvent.TestConnection -> runConnectionTest()
             is HomeEvent.DismissStatus -> _uiState.update { it.copy(connectionStatus = null) }
+            is HomeEvent.RequestShizukuPermission -> shizukuManager.requestPermission()
         }
     }
 
