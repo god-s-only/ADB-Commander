@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.adbcommand.app.core.Commands
 import com.adbcommand.app.data.remote.ShizukuManager
-import com.adbcommand.app.data.remote.ShizukuState
 import com.adbcommand.app.domain.usecase.home.GetPairingCodeUseCase
 import com.adbcommand.app.domain.usecase.home.LoadDeviceInfoUseCase
 import com.adbcommand.app.domain.usecase.home.TestConnectionUseCase
@@ -19,6 +18,12 @@ import javax.inject.Inject
 enum class ConnectionStatus { SUCCESS, FAILURE }
 
 data class ConnectionResult(val status: ConnectionStatus, val message: String)
+data class ShizukuState(
+    val isRunning: Boolean           = false,
+    val isPermissionGranted: Boolean = false
+) {
+    val isFullyAvailable: Boolean get() = isRunning && isPermissionGranted
+}
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(

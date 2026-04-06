@@ -106,10 +106,3 @@ class ShizukuManager @Inject constructor(
         false
     }
 }
-
-data class ShizukuState(
-    val isRunning: Boolean           = false,
-    val isPermissionGranted: Boolean = false
-) {
-    val isFullyAvailable: Boolean get() = isRunning && isPermissionGranted
-}
