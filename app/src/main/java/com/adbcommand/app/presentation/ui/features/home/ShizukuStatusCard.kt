@@ -38,7 +38,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun ShizukuStatusCard(
     state: ShizukuState,
-    onRequestPermission: () -> Unit,
+    onRequestPermission: (HomeEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
 
@@ -108,11 +108,10 @@ fun ShizukuStatusCard(
                     lineHeight = 16.sp
                 )
 
-                // Show grant button only when Shizuku is running but not permitted
                 AnimatedVisibility(visible = state.isRunning && !state.isPermissionGranted) {
                     Spacer(Modifier.height(10.dp))
                     Button(
-                        onClick = onRequestPermission,
+                        onClick = { onRequestPermission(HomeEvent.RequestShizukuPermission) },
                         colors  = ButtonDefaults.buttonColors(
                             containerColor = contentColor,
                             contentColor   = containerColor
