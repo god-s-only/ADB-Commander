@@ -19,7 +19,7 @@ enum class ConnectionStatus { SUCCESS, FAILURE }
 
 data class ConnectionResult(val status: ConnectionStatus, val message: String)
 data class ShizukuState(
-    val isRunning: Boolean           = false,
+    val isRunning: Boolean = false,
     val isPermissionGranted: Boolean = false
 ) {
     val isFullyAvailable: Boolean get() = isRunning && isPermissionGranted

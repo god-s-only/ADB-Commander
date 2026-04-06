@@ -31,7 +31,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             ADBCommanderTheme {
                 val navController = rememberNavController()
-                NavHost(navController = navController, startDestination = Routes.HOME){
+                NavHost(navController = navController, startDestination = Routes.APP_MANAGER_SCREEN){
                     composable(Routes.HOME) {
                         AdbCommanderHome(onShowCommands = { ip, adbPort, pairingPort, code ->
                             navController.navigate(
