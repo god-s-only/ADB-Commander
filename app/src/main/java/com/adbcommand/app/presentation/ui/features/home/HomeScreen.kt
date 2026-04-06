@@ -35,6 +35,10 @@ fun AdbCommanderHome(
         topBar = {
             LargeTopAppBar(
                 title = {
+                    ShizukuStatusCard(
+                        state = viewModel.shizukuState.collectAsStateWithLifecycle().value,
+                        onRequestPermission = viewModel::onEvent
+                    )
                     Text(
                         "ADB Commander",
                         fontWeight = FontWeight.ExtraBold,
@@ -42,7 +46,6 @@ fun AdbCommanderHome(
                     )
                 },
                 actions = {
-                    // Refresh button
                     IconButton(onClick = { viewModel.onEvent(HomeEvent.LoadInfo) }) {
                         if (state.isLoadingInfo) {
                             CircularProgressIndicator(
