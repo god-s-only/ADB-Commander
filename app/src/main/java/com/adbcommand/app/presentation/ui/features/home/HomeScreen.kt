@@ -34,15 +34,22 @@ fun AdbCommanderHome(
     Scaffold(
         topBar = {
             LargeTopAppBar(
-                title = {
+                navigationIcon = {
                     Text(
                         "ADB Commander",
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = (-0.5).sp
                     )
                 },
+                title = {
+                    Column{
+                        ShizukuStatusCard(
+                            state = viewModel.shizukuState.collectAsStateWithLifecycle().value,
+                            onRequestPermission = viewModel::onEvent
+                        )
+                    }
+                },
                 actions = {
-                    // Refresh button
                     IconButton(onClick = { viewModel.onEvent(HomeEvent.LoadInfo) }) {
                         if (state.isLoadingInfo) {
                             CircularProgressIndicator(

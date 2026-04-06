@@ -46,6 +46,7 @@ android {
 dependencies {
     val room_version = "2.8.4"
     val nav_version = "2.9.6"
+    val shizuku_version = "13.1.5"
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -69,4 +70,6 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended:1.5.4")
     implementation("com.google.dagger:hilt-android:2.57.1")
     ksp("com.google.dagger:hilt-android-compiler:2.57.1")
+    implementation("dev.rikka.shizuku:api:$shizuku_version")
+    implementation("dev.rikka.shizuku:provider:$shizuku_version")
 }
