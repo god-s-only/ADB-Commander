@@ -24,8 +24,8 @@ import javax.inject.Singleton
 object RepositoryModule {
     @Provides
     @Singleton
-    fun provideHomeRepository(shellExecutor: ShellCommandsExecution): HomeRepository{
-        return HomeRepositoryImpl(shellExecutor)
+    fun provideHomeRepository(shizuku: ShizukuManager, @ApplicationContext context: Context): HomeRepository{
+        return HomeRepositoryImpl(context, shizuku)
     }
 
     @Provides
