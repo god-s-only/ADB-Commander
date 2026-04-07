@@ -7,11 +7,13 @@ import com.adbcommand.app.data.repository.AppManagerRepositoryImpl
 import com.adbcommand.app.data.repository.CommandsRepositoryImpl
 import com.adbcommand.app.data.repository.DeviceInfoRepositoryImpl
 import com.adbcommand.app.data.repository.HomeRepositoryImpl
+import com.adbcommand.app.data.repository.LogcatRepositoryImpl
 import com.adbcommand.app.data.repository.ShizukuAppManagerRepository
 import com.adbcommand.app.domain.repository.AppManagerRepository
 import com.adbcommand.app.domain.repository.CommandsRepository
 import com.adbcommand.app.domain.repository.DeviceInfoRepository
 import com.adbcommand.app.domain.repository.HomeRepository
+import com.adbcommand.app.domain.repository.LogcatRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -44,5 +46,11 @@ object RepositoryModule {
     @Singleton
     fun provideAppManagerRepository(shizuku: ShizukuManager, @ApplicationContext context: Context): AppManagerRepository {
         return ShizukuAppManagerRepository(context, shizuku)
+    }
+
+    @Provides
+    @Singleton
+    fun provideLogcatRepository(shizuku: ShizukuManager): LogcatRepository{
+        return LogcatRepositoryImpl(shizuku)
     }
 }
