@@ -21,6 +21,7 @@ import com.adbcommand.app.presentation.ui.features.appmanager.AppManagerScreen
 import com.adbcommand.app.presentation.ui.features.commands.CommandsScreen
 import com.adbcommand.app.presentation.ui.features.deviceinfo.DeviceInfoScreen
 import com.adbcommand.app.presentation.ui.features.home.AdbCommanderHome
+import com.adbcommand.app.presentation.ui.features.logcat.LogcatScreen
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -31,7 +32,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             ADBCommanderTheme {
                 val navController = rememberNavController()
-                NavHost(navController = navController, startDestination = Routes.HOME){
+                NavHost(navController = navController, startDestination = Routes.LOGCAT_SCREEN){
                     composable(Routes.HOME) {
                         AdbCommanderHome(onShowCommands = { ip, adbPort, pairingPort, code ->
                             navController.navigate(
@@ -74,6 +75,9 @@ class MainActivity : ComponentActivity() {
                     }
                     composable(Routes.APP_MANAGER_SCREEN) {
                         AppManagerScreen({})
+                    }
+                    composable(Routes.LOGCAT_SCREEN) {
+                        LogcatScreen({})
                     }
                 }
             }
