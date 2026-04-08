@@ -31,7 +31,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.adbcommand.app.domain.models.LogLevel
 import com.adbcommand.app.domain.models.LogLine
 import com.adbcommand.app.domain.models.LogcatEvent
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,10 +38,9 @@ fun LogcatScreen(
     onNavigateBack: () -> Unit,
     viewModel: LogcatViewModel = hiltViewModel()
 ) {
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val listState    = rememberLazyListState()
-    val scope = rememberCoroutineScope()
-    val snackbarHost = remember { SnackbarHostState() }
+    val state        by viewModel.uiState.collectAsStateWithLifecycle()
+    val listState     = rememberLazyListState()
+    val snackbarHost  = remember { SnackbarHostState() }
 
     LaunchedEffect(state.lines.size) {
         if (state.autoScroll && state.lines.isNotEmpty()) {
@@ -80,9 +78,7 @@ fun LogcatScreen(
                     }
                 },
                 actions = {
-                    IconButton(
-                        onClick = { viewModel.onEvent(LogcatEvent.ToggleAutoScroll) }
-                    ) {
+                    IconButton(onClick = { viewModel.onEvent(LogcatEvent.ToggleAutoScroll) }) {
                         Icon(
                             imageVector = if (state.autoScroll)
                                 Icons.Default.VerticalAlignBottom
@@ -122,6 +118,7 @@ fun LogcatScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
+
             FilterBar(
                 filter   = state.filter,
                 onEvent  = viewModel::onEvent,
@@ -130,8 +127,8 @@ fun LogcatScreen(
 
             AnimatedVisibility(
                 visible = state.error != null,
-                enter = fadeIn(),
-                exit = fadeOut()
+                enter   = fadeIn(),
+                exit    = fadeOut()
             ) {
                 state.error?.let { err ->
                     Card(
@@ -144,20 +141,19 @@ fun LogcatScreen(
                         )
                     ) {
                         Row(
-                            modifier = Modifier.padding(12.dp),
+                            modifier          = Modifier.padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                Icons.Default.ErrorOutline,
-                                null,
+                                Icons.Default.ErrorOutline, null,
                                 Modifier.size(16.dp),
                                 tint = MaterialTheme.colorScheme.onErrorContainer
                             )
                             Spacer(Modifier.width(8.dp))
                             Text(
                                 err,
-                                style  = MaterialTheme.typography.labelSmall,
-                                color  = MaterialTheme.colorScheme.onErrorContainer
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
                             )
                         }
                     }
@@ -168,7 +164,7 @@ fun LogcatScreen(
                 state.lines
             } else {
                 state.lines.filter { line ->
-                    line.raw.contains(state.filter.searchQuery, ignoreCase = true) ||
+                    line.raw.contains(state.filter.searchQuery, ignoreCase = true)     ||
                             line.message.contains(state.filter.searchQuery, ignoreCase = true) ||
                             line.tag.contains(state.filter.searchQuery, ignoreCase = true)
                 }
@@ -176,13 +172,12 @@ fun LogcatScreen(
 
             if (displayLines.isEmpty() && !state.isRunning) {
                 Box(
-                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    modifier         = Modifier.weight(1f).fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
-                            Icons.Default.Terminal,
-                            null,
+                            Icons.Default.Terminal, null,
                             Modifier.size(48.dp),
                             tint = MaterialTheme.colorScheme.outline
                         )
@@ -196,18 +191,18 @@ fun LogcatScreen(
                 }
             } else {
                 LazyColumn(
-                    state = listState,
-                    modifier = Modifier
+                    state          = listState,
+                    modifier       = Modifier
                         .weight(1f)
                         .fillMaxWidth()
                         .background(
                             MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)
                         ),
-                    contentPadding  = PaddingValues(vertical = 4.dp)
+                    contentPadding = PaddingValues(vertical = 4.dp)
                 ) {
                     items(
                         items = displayLines,
-                        key   = { it.hashCode() + it.timestamp.hashCode() }
+                        key   = { it.id }
                     ) { line ->
                         LogLineRow(line = line)
                     }
@@ -216,8 +211,8 @@ fun LogcatScreen(
 
             BottomControlBar(
                 isRunning = state.isRunning,
-                onStart = { viewModel.onEvent(LogcatEvent.Started) },
-                onStop = { viewModel.onEvent(LogcatEvent.Stopped) }
+                onStart   = { viewModel.onEvent(LogcatEvent.Started) },
+                onStop    = { viewModel.onEvent(LogcatEvent.Stopped) }
             )
         }
     }
@@ -233,7 +228,7 @@ private fun FilterBar(
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
 
         Row(
-            modifier = Modifier.horizontalScroll(rememberScrollState()),
+            modifier              = Modifier.horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             LogLevel.entries.forEach { level ->
@@ -259,13 +254,13 @@ private fun FilterBar(
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(
-                value         = filter.tag,
-                onValueChange = { onEvent(LogcatEvent.TagChanged(it)) },
-                placeholder   = { Text("Tag", fontSize = 12.sp) },
-                singleLine    = true,
-                modifier      = Modifier.weight(1f),
-                shape         = RoundedCornerShape(10.dp),
-                textStyle     = LocalTextStyle.current.copy(
+                value           = filter.tag,
+                onValueChange   = { onEvent(LogcatEvent.TagChanged(it)) },
+                placeholder     = { Text("Tag", fontSize = 12.sp) },
+                singleLine      = true,
+                modifier        = Modifier.weight(1f),
+                shape           = RoundedCornerShape(10.dp),
+                textStyle       = LocalTextStyle.current.copy(
                     fontFamily = FontFamily.Monospace,
                     fontSize   = 13.sp
                 ),
@@ -277,23 +272,21 @@ private fun FilterBar(
                 )
             )
             OutlinedTextField(
-                value         = filter.searchQuery,
-                onValueChange = { onEvent(LogcatEvent.SearchChanged(it)) },
-                placeholder   = { Text("Search", fontSize = 12.sp) },
-                leadingIcon   = {
-                    Icon(Icons.Default.Search, null, Modifier.size(16.dp))
-                },
-                trailingIcon  = {
+                value           = filter.searchQuery,
+                onValueChange   = { onEvent(LogcatEvent.SearchChanged(it)) },
+                placeholder     = { Text("Search", fontSize = 12.sp) },
+                leadingIcon     = { Icon(Icons.Default.Search, null, Modifier.size(16.dp)) },
+                trailingIcon    = {
                     if (filter.searchQuery.isNotBlank()) {
                         IconButton(onClick = { onEvent(LogcatEvent.SearchChanged("")) }) {
                             Icon(Icons.Default.Close, null, Modifier.size(14.dp))
                         }
                     }
                 },
-                singleLine    = true,
-                modifier      = Modifier.weight(1.5f),
-                shape         = RoundedCornerShape(10.dp),
-                textStyle     = LocalTextStyle.current.copy(fontSize = 13.sp),
+                singleLine      = true,
+                modifier        = Modifier.weight(1.5f),
+                shape           = RoundedCornerShape(10.dp),
+                textStyle       = LocalTextStyle.current.copy(fontSize = 13.sp),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Text,
                     imeAction    = ImeAction.Search
@@ -312,14 +305,13 @@ private fun FilterBar(
 @Composable
 private fun LogLineRow(line: LogLine) {
     Row(
-        modifier = Modifier
+        modifier          = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 1.dp),
         verticalAlignment = Alignment.Top
     ) {
-        // Level badge
         Box(
-            modifier        = Modifier
+            modifier         = Modifier
                 .padding(top = 2.dp)
                 .size(width = 18.dp, height = 18.dp)
                 .background(
@@ -347,21 +339,21 @@ private fun LogLineRow(line: LogLine) {
                 ) {
                     if (line.tag.isNotBlank()) {
                         Text(
-                            text = line.tag,
-                            fontSize = 10.sp,
+                            text       = line.tag,
+                            fontSize   = 10.sp,
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.SemiBold,
-                            color = logLevelColor(line.level),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.widthIn(max = 160.dp)
+                            color      = logLevelColor(line.level),
+                            maxLines   = 1,
+                            overflow   = TextOverflow.Ellipsis,
+                            modifier   = Modifier.widthIn(max = 160.dp)
                         )
                     }
                     if (line.timestamp.isNotBlank()) {
                         Text(
-                            text     = line.timestamp,
-                            fontSize = 9.sp,
-                            color    = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
+                            text       = line.timestamp,
+                            fontSize   = 9.sp,
+                            color      = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
                             fontFamily = FontFamily.Monospace
                         )
                     }
@@ -384,6 +376,7 @@ private fun LogLineRow(line: LogLine) {
     )
 }
 
+// ── Bottom control bar ────────────────────────────────────────────────────────
 
 @Composable
 private fun BottomControlBar(
@@ -396,7 +389,7 @@ private fun BottomControlBar(
         modifier       = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier
+            modifier              = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -433,10 +426,8 @@ private fun BottomControlBar(
             } else {
                 Button(
                     onClick  = onStart,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    shape = RoundedCornerShape(14.dp)
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    shape    = RoundedCornerShape(14.dp)
                 ) {
                     Icon(Icons.Default.PlayArrow, null, Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
@@ -456,8 +447,8 @@ private fun logLevelColor(level: LogLevel): Color = when (level) {
     LogLevel.VERBOSE -> MaterialTheme.colorScheme.outline
     LogLevel.DEBUG   -> MaterialTheme.colorScheme.tertiary
     LogLevel.INFO    -> MaterialTheme.colorScheme.primary
-    LogLevel.WARNING -> Color(0xFFF59E0B)   // amber
+    LogLevel.WARNING -> Color(0xFFF59E0B)
     LogLevel.ERROR   -> MaterialTheme.colorScheme.error
-    LogLevel.FATAL   -> Color(0xFFDC2626)   // red-700
+    LogLevel.FATAL   -> Color(0xFFDC2626)
     LogLevel.SILENT  -> MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
 }
