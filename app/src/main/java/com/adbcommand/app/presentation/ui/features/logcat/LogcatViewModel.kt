@@ -2,8 +2,10 @@ package com.adbcommand.app.presentation.ui.features.logcat
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.adbcommand.app.domain.models.LogcatEvent
 import com.adbcommand.app.domain.models.LogcatFilter
+import com.adbcommand.app.domain.models.LogLevel
+import com.adbcommand.app.domain.models.LogLine
+import com.adbcommand.app.domain.models.LogcatEvent
 import com.adbcommand.app.domain.usecase.logcat.SaveLogcatUseCase
 import com.adbcommand.app.domain.usecase.logcat.StreamLogcatUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -13,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
 
 @HiltViewModel
@@ -23,7 +26,10 @@ class LogcatViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(LogcatUiState())
     val uiState: StateFlow<LogcatUiState> = _uiState.asStateFlow()
+
     private var logcatJob: Job? = null
+
+    private val lineCounter = AtomicLong(0L)
 
     private val maxLines = 2000
 
@@ -37,13 +43,11 @@ class LogcatViewModel @Inject constructor(
                 _uiState.update { it.copy(autoScroll = !it.autoScroll) }
             is LogcatEvent.DismissSaveResult ->
                 _uiState.update { it.copy(saveResult = null) }
-            is LogcatEvent.LevelChanged -> restartWithFilter(
-                _uiState.value.filter.copy(level = event.level)
-            )
-            is LogcatEvent.TagChanged     -> restartWithFilter(
-                _uiState.value.filter.copy(tag = event.tag)
-            )
-            is LogcatEvent.SearchChanged  ->
+            is LogcatEvent.LevelChanged    ->
+                restartWithFilter(_uiState.value.filter.copy(level = event.level))
+            is LogcatEvent.TagChanged      ->
+                restartWithFilter(_uiState.value.filter.copy(tag = event.tag))
+            is LogcatEvent.SearchChanged   ->
                 _uiState.update {
                     it.copy(filter = it.filter.copy(searchQuery = event.query))
                 }
@@ -51,7 +55,6 @@ class LogcatViewModel @Inject constructor(
             else -> {}
         }
     }
-
 
     private fun start() {
         if (logcatJob?.isActive == true) return
@@ -63,9 +66,11 @@ class LogcatViewModel @Inject constructor(
                         _uiState.update { it.copy(isRunning = true, error = null) }
                     }
                     is com.adbcommand.app.domain.models.LogcatEvent.Line -> {
+
+                        val withId = event.logLine.copy(id = lineCounter.getAndIncrement())
+
                         _uiState.update { state ->
-                            val updated = (state.lines + event.logLine)
-                                .takeLast(maxLines)
+                            val updated = (state.lines + withId).takeLast(maxLines)
                             state.copy(lines = updated)
                         }
                     }
@@ -91,16 +96,16 @@ class LogcatViewModel @Inject constructor(
     }
 
     private fun clear() {
+        lineCounter.set(0L)
         _uiState.update { it.copy(lines = emptyList(), error = null) }
     }
-
 
     private fun save() {
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
 
             val rawLines = _uiState.value.lines.map { it.raw.ifBlank { it.message } }
-            val result = saveLogcat(rawLines)
+            val result   = saveLogcat(rawLines)
 
             _uiState.update {
                 it.copy(
@@ -114,9 +119,11 @@ class LogcatViewModel @Inject constructor(
         }
     }
 
+
     private fun restartWithFilter(newFilter: LogcatFilter) {
         val wasRunning = logcatJob?.isActive == true
         stop()
+        lineCounter.set(0L)
         _uiState.update { it.copy(filter = newFilter, lines = emptyList()) }
         if (wasRunning) start()
     }
