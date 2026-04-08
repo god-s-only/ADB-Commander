@@ -14,11 +14,12 @@ object LogcatParser {
     )
 
     fun parse(raw: String): LogLine {
-        if (raw.isBlank()) return LogLine(raw = raw)
+        if (raw.isBlank()) return LogLine(id = 0, raw = raw)
 
         THREADTIME_REGEX.find(raw)?.let { match ->
             val (timestamp, levelChar, tag, message) = match.destructured
             return LogLine(
+                id = 0,
                 raw = raw,
                 timestamp = timestamp.trim(),
                 level = LogLevel.fromChar(levelChar),
@@ -29,12 +30,13 @@ object LogcatParser {
         BRIEF_REGEX.find(raw)?.let { match ->
             val (levelChar, tag, message) = match.destructured
             return LogLine(
+                id = 0,
                 raw     = raw,
                 level   = LogLevel.fromChar(levelChar),
                 tag     = tag.trim(),
                 message = message.trim()
             )
         }
-        return LogLine(raw = raw, message = raw)
+        return LogLine(id = 0, raw = raw, message = raw)
     }
 }
