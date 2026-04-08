@@ -31,7 +31,7 @@ class LogcatViewModel @Inject constructor(
 
     private val lineCounter = AtomicLong(0L)
 
-    private val maxLines = 2000
+    private val maxLines = 500
 
     fun onEvent(event: LogcatEvent) {
         when (event) {
