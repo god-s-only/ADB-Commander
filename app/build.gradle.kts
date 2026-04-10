@@ -72,4 +72,5 @@ dependencies {
     ksp("com.google.dagger:hilt-android-compiler:2.57.1")
     implementation("dev.rikka.shizuku:api:$shizuku_version")
     implementation("dev.rikka.shizuku:provider:$shizuku_version")
+    implementation("com.android.billingclient:billing-ktx:7.0.0")
 }
