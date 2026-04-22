@@ -9,7 +9,9 @@ import com.adbcommand.app.data.repository.DeviceInfoRepositoryImpl
 import com.adbcommand.app.data.repository.HomeRepositoryImpl
 import com.adbcommand.app.data.repository.LogcatRepositoryImpl
 import com.adbcommand.app.data.repository.ShizukuAppManagerRepository
+import com.adbcommand.app.data.repository.StripeBillingRepositoryImpl
 import com.adbcommand.app.domain.repository.AppManagerRepository
+import com.adbcommand.app.domain.repository.BillingRepository
 import com.adbcommand.app.domain.repository.CommandsRepository
 import com.adbcommand.app.domain.repository.DeviceInfoRepository
 import com.adbcommand.app.domain.repository.HomeRepository
@@ -52,5 +54,11 @@ object RepositoryModule {
     @Singleton
     fun provideLogcatRepository(shizuku: ShizukuManager): LogcatRepository{
         return LogcatRepositoryImpl(shizuku)
+    }
+
+    @Provides
+    @Singleton
+    fun provideStripeRepisitory(@ApplicationContext context: Context): BillingRepository{
+        return StripeBillingRepositoryImpl(context)
     }
 }
