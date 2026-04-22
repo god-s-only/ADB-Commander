@@ -73,4 +73,5 @@ dependencies {
     implementation("dev.rikka.shizuku:api:$shizuku_version")
     implementation("dev.rikka.shizuku:provider:$shizuku_version")
     implementation("com.android.billingclient:billing-ktx:7.0.0")
+    implementation("com.stripe:stripe-android:23.4.0")
 }
