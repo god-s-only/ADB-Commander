@@ -6,4 +6,6 @@ object Routes {
     const val DEVICE_INFO_SCREEN = "device_info_screen"
     const val APP_MANAGER_SCREEN = "app_manager_screen"
     const val LOGCAT_SCREEN = "logcat_screen"
+    const val CAPTURE_SCREEN = "capture_screen"
+    const val BILLING_SCREEN = "billing_screen"
 }
