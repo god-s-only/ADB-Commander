@@ -44,7 +44,7 @@ class CaptureRepositoryImpl @Inject constructor(
             try {
                 shizuku.run(CaptureCommands.mkdirCapture())
                 val filePath = CaptureCommands.newScreenshotPath()
-                val result   = shizuku.run(CaptureCommands.takeScreenshot(filePath))
+                val result = shizuku.run(CaptureCommands.takeScreenshot(filePath))
 
                 if (!result.success && result.error.isNotBlank()) {
                     return@withContext Result.failure(
