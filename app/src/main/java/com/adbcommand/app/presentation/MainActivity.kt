@@ -45,6 +45,7 @@ import com.adbcommand.app.core.Routes
 import com.adbcommand.app.presentation.theme.ADBCommanderTheme
 
 import com.adbcommand.app.presentation.ui.features.appmanager.AppManagerScreen
+import com.adbcommand.app.presentation.ui.features.capture.CaptureScreen
 import com.adbcommand.app.presentation.ui.features.commands.CommandsScreen
 import com.adbcommand.app.presentation.ui.features.deviceinfo.DeviceInfoScreen
 import com.adbcommand.app.presentation.ui.features.home.AdbCommanderHome
@@ -84,7 +85,7 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     NavHost(
                         navController    = navController,
-                        startDestination = Routes.HOME,
+                        startDestination = Routes.CAPTURE_SCREEN,
                         modifier         = Modifier
                             .fillMaxSize()
                             .padding(innerPadding)
@@ -142,6 +143,11 @@ class MainActivity : ComponentActivity() {
                             LogcatScreen(
                                 onNavigateBack = { navController.popBackStack() }
                             )
+                        }
+                        composable(Routes.CAPTURE_SCREEN) {
+                            CaptureScreen(onNavigateBack = {
+                                navController.popBackStack()
+                            })
                         }
                     }
                 }
