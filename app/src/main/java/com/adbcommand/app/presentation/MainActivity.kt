@@ -72,25 +72,24 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     bottomBar = {
                         AnimatedVisibility(
-                            visible  = showBottomBar,
-                            enter    = fadeIn() + slideInVertically { it },
-                            exit     = fadeOut() + slideOutVertically { it }
+                            visible = showBottomBar,
+                            enter = fadeIn() + slideInVertically { it },
+                            exit = fadeOut() + slideOutVertically { it }
                         ) {
                             AdbBottomBar(
-                                navController        = navController,
-                                currentDestination   = currentDestination
+                                navController = navController,
+                                currentDestination = currentDestination
                             )
                         }
                     }
                 ) { innerPadding ->
                     NavHost(
-                        navController    = navController,
+                        navController = navController,
                         startDestination = Routes.CAPTURE_SCREEN,
-                        modifier         = Modifier
+                        modifier = Modifier
                             .fillMaxSize()
                             .padding(innerPadding)
                     ) {
-
                         composable(Routes.HOME) {
                             AdbCommanderHome(
                                 onShowCommands = { ip, adbPort, pairingPort, code ->
