@@ -3,15 +3,19 @@ package com.adbcommand.app.di
 import android.content.Context
 import com.adbcommand.app.core.ShellCommandsExecution
 import com.adbcommand.app.data.remote.ShizukuManager
+import com.adbcommand.app.data.repository.AppInspectorRepositoryImpl
 import com.adbcommand.app.data.repository.AppManagerRepositoryImpl
+import com.adbcommand.app.data.repository.CaptureRepositoryImpl
 import com.adbcommand.app.data.repository.CommandsRepositoryImpl
 import com.adbcommand.app.data.repository.DeviceInfoRepositoryImpl
 import com.adbcommand.app.data.repository.HomeRepositoryImpl
 import com.adbcommand.app.data.repository.LogcatRepositoryImpl
 import com.adbcommand.app.data.repository.ShizukuAppManagerRepository
 import com.adbcommand.app.data.repository.StripeBillingRepositoryImpl
+import com.adbcommand.app.domain.repository.AppInspectorRepository
 import com.adbcommand.app.domain.repository.AppManagerRepository
 import com.adbcommand.app.domain.repository.BillingRepository
+import com.adbcommand.app.domain.repository.CaptureRepository
 import com.adbcommand.app.domain.repository.CommandsRepository
 import com.adbcommand.app.domain.repository.DeviceInfoRepository
 import com.adbcommand.app.domain.repository.HomeRepository
@@ -60,5 +64,17 @@ object RepositoryModule {
     @Singleton
     fun provideStripeRepisitory(@ApplicationContext context: Context): BillingRepository{
         return StripeBillingRepositoryImpl(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideCaptureRepository(@ApplicationContext context: Context, shizuku: ShizukuManager): CaptureRepository{
+        return CaptureRepositoryImpl(context, shizuku)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAppInspectorRepository(@ApplicationContext context: Context): AppInspectorRepository{
+        return AppInspectorRepositoryImpl(context)
     }
 }
