@@ -12,16 +12,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Apps
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.PhoneAndroid
-import androidx.compose.material.icons.filled.Terminal
-import androidx.compose.material.icons.outlined.Apps
-import androidx.compose.material.icons.outlined.Code
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.PhoneAndroid
-import androidx.compose.material.icons.outlined.Terminal
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -30,25 +21,32 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.adbcommand.app.core.Routes
+import com.adbcommand.app.domain.models.Feature
+import com.adbcommand.app.domain.usecase.process.ProcessMonitorScreen
 import com.adbcommand.app.presentation.theme.ADBCommanderTheme
-
+import com.adbcommand.app.presentation.ui.components.BottomNavItem
+import com.adbcommand.app.presentation.ui.components.bottomNavItems
+import com.adbcommand.app.presentation.ui.components.detailRoutes
 import com.adbcommand.app.presentation.ui.features.appmanager.AppManagerScreen
 import com.adbcommand.app.presentation.ui.features.capture.CaptureScreen
 import com.adbcommand.app.presentation.ui.features.commands.CommandsScreen
 import com.adbcommand.app.presentation.ui.features.deviceinfo.DeviceInfoScreen
 import com.adbcommand.app.presentation.ui.features.home.AdbCommanderHome
+import com.adbcommand.app.presentation.ui.features.inspector.AppInspectorScreen
+import com.adbcommand.app.presentation.ui.features.intentsender.IntentSenderScreen
 import com.adbcommand.app.presentation.ui.features.logcat.LogcatScreen
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -60,93 +58,168 @@ class MainActivity : ComponentActivity() {
         setContent {
             ADBCommanderTheme {
                 val navController = rememberNavController()
-                val navBackStackEntry by navController.currentBackStackEntryAsState()
-                val currentDestination = navBackStackEntry?.destination
-                val bottomBarRoutes = bottomNavItems.map { it.route }.toSet()
+                val backStackEntry by navController.currentBackStackEntryAsState()
+                val currentDestination = backStackEntry?.destination
+                val currentRoute = currentDestination?.route ?: ""
 
-                val showBottomBar = currentDestination?.route?.let { route ->
-                    bottomBarRoutes.any { route.startsWith(it) }
-                } ?: false
+                // Hide bottom bar on detail screens and commands (nav arg route)
+                val showBottomBar = detailRoutes.none { currentRoute.startsWith(it) }
 
                 Scaffold(
-                    modifier = Modifier.fillMaxSize(),
-                    bottomBar = {
+                    modifier   = Modifier.fillMaxSize(),
+                    bottomBar  = {
                         AnimatedVisibility(
                             visible = showBottomBar,
-                            enter = fadeIn() + slideInVertically { it },
-                            exit = fadeOut() + slideOutVertically { it }
+                            enter   = fadeIn() + slideInVertically { it },
+                            exit    = fadeOut() + slideOutVertically { it }
                         ) {
-                            AdbBottomBar(
-                                navController = navController,
-                                currentDestination = currentDestination
-                            )
+                            AdbBottomBar(navController, currentDestination)
                         }
                     }
                 ) { innerPadding ->
                     NavHost(
-                        navController = navController,
-                        startDestination = Routes.CAPTURE_SCREEN,
-                        modifier = Modifier
+                        navController    = navController,
+                        startDestination = Routes.HOME,
+                        modifier         = Modifier
                             .fillMaxSize()
                             .padding(innerPadding)
                     ) {
+
+                        // ── HOME ──────────────────────────────────────────────
                         composable(Routes.HOME) {
                             AdbCommanderHome(
                                 onShowCommands = { ip, adbPort, pairingPort, code ->
                                     navController.navigate(
-                                        Routes.COMMANDS_SCREEN +
-                                                "?ip=$ip" +
-                                                "&adbPort=$adbPort" +
-                                                "&pairingPort=$pairingPort" +
-                                                "&pairingCode=$code"
+                                        Routes.commandsRoute(ip, adbPort, pairingPort, code)
                                     )
+                                },
+                                onNavigateToSettings = {
+                                    navController.navigate(Routes.SETTINGS_SCREEN)
+                                },
+                                onNavigateToCapture  = {
+                                    navController.navigate(Routes.CAPTURE_SCREEN)
+                                },
+                                onNavigateToProcessMonitor = {
+                                    navController.navigate(Routes.PROCESS_MONITOR_SCREEN)
+                                },
+                                onNavigateToIntentSender = {
+                                    navController.navigate(Routes.INTENT_SENDER_SCREEN)
                                 }
                             )
                         }
 
+                        // ── COMMANDS ──────────────────────────────────────────
                         composable(
-                            route = Routes.COMMANDS_SCREEN +
-                                    "?ip={ip}" +
-                                    "&adbPort={adbPort}" +
-                                    "&pairingPort={pairingPort}" +
-                                    "&pairingCode={pairingCode}",
+                            route = Routes.COMMANDS_ROUTE,
                             arguments = listOf(
                                 navArgument("ip")          { defaultValue = "" },
                                 navArgument("adbPort")     { defaultValue = "5555" },
                                 navArgument("pairingPort") { defaultValue = "" },
                                 navArgument("pairingCode") { defaultValue = "" }
                             )
-                        ) { backStackEntry ->
+                        ) { entry ->
                             CommandsScreen(
-                                ip             = backStackEntry.arguments?.getString("ip")          ?: "",
-                                adbPort        = backStackEntry.arguments?.getString("adbPort")     ?: "5555",
-                                pairingPort    = backStackEntry.arguments?.getString("pairingPort") ?: "",
-                                pairingCode    = backStackEntry.arguments?.getString("pairingCode") ?: "",
+                                ip             = entry.arguments?.getString("ip")          ?: "",
+                                adbPort        = entry.arguments?.getString("adbPort")     ?: "5555",
+                                pairingPort    = entry.arguments?.getString("pairingPort") ?: "",
+                                pairingCode    = entry.arguments?.getString("pairingCode") ?: "",
                                 onNavigateBack = { navController.popBackStack() }
                             )
                         }
 
+                        // ── APP MANAGER ───────────────────────────────────────
                         composable(Routes.APP_MANAGER_SCREEN) {
                             AppManagerScreen(
-                                onNavigateBack = { navController.popBackStack() }
+                                onNavigateBack    = { navController.popBackStack() },
+                                onNavigateToInspector = { pkg ->
+                                    navController.navigate(Routes.appInspectorRoute(pkg))
+                                },
+                                onNavigateToPaywall = { feature ->
+                                    navController.navigate(Routes.paywallRoute(feature.name))
+                                }
                             )
                         }
 
+                        // ── DEVICE INFO ───────────────────────────────────────
                         composable(Routes.DEVICE_INFO_SCREEN) {
                             DeviceInfoScreen(
+                                onNavigateBack    = { navController.popBackStack() },
+                                onNavigateToPaywall = { feature ->
+                                    navController.navigate(Routes.paywallRoute(feature.name))
+                                }
+                            )
+                        }
+
+                        // ── LOGCAT ────────────────────────────────────────────
+                        composable(Routes.LOGCAT_SCREEN) {
+                            LogcatScreen(
+                                onNavigateBack    = { navController.popBackStack() },
+                                onNavigateToPaywall = { feature ->
+                                    navController.navigate(Routes.paywallRoute(feature.name))
+                                }
+                            )
+                        }
+
+                        // ── SETTINGS ──────────────────────────────────────────
+                        composable(Routes.SETTINGS_SCREEN) {
+                            SettingsScreen(
+                                onNavigateBack     = { navController.popBackStack() },
+                                onNavigateToPaywall = {
+                                    navController.navigate(Routes.paywallRoute())
+                                }
+                            )
+                        }
+
+                        // ── PAYWALL ───────────────────────────────────────────
+                        composable(
+                            route = Routes.PAYWALL_ROUTE,
+                            arguments = listOf(
+                                navArgument("feature") { defaultValue = "" }
+                            )
+                        ) { entry ->
+                            val featureName = entry.arguments?.getString("feature") ?: ""
+                            val feature = runCatching {
+                                Feature.valueOf(featureName)
+                            }.getOrNull()
+
+                            PaywallScreen(
+                                onNavigateBack   = { navController.popBackStack() },
+                                highlightFeature = feature
+                            )
+                        }
+
+                        // ── CAPTURE ───────────────────────────────────────────
+                        composable(Routes.CAPTURE_SCREEN) {
+                            CaptureScreen(
                                 onNavigateBack = { navController.popBackStack() }
                             )
                         }
 
-                        composable(Routes.LOGCAT_SCREEN) {
-                            LogcatScreen(
+                        // ── APP INSPECTOR ─────────────────────────────────────
+                        composable(
+                            route = Routes.APP_INSPECTOR_ROUTE,
+                            arguments = listOf(
+                                navArgument("packageName") { defaultValue = "" }
+                            )
+                        ) { entry ->
+                            AppInspectorScreen(
+                                packageName    = entry.arguments?.getString("packageName") ?: "",
                                 onNavigateBack = { navController.popBackStack() }
                             )
                         }
-                        composable(Routes.CAPTURE_SCREEN) {
-                            CaptureScreen(onNavigateBack = {
-                                navController.popBackStack()
-                            })
+
+                        // ── PROCESS MONITOR ───────────────────────────────────
+                        composable(Routes.PROCESS_MONITOR_SCREEN) {
+                            ProcessMonitorScreen(
+                                onNavigateBack = { navController.popBackStack() }
+                            )
+                        }
+
+                        // ── INTENT SENDER ─────────────────────────────────────
+                        composable(Routes.INTENT_SENDER_SCREEN) {
+                            IntentSenderScreen(
+                                onNavigateBack = { navController.popBackStack() }
+                            )
                         }
                     }
                 }
@@ -155,15 +228,17 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+// ── Bottom navigation bar ─────────────────────────────────────────────────────
+
 @Composable
 private fun AdbBottomBar(
     navController: NavHostController,
-    currentDestination: androidx.navigation.NavDestination?
+    currentDestination: NavDestination?
 ) {
     NavigationBar {
         bottomNavItems.forEach { item ->
-            val isSelected = currentDestination?.hierarchy?.any { destination ->
-                destination.route?.startsWith(item.route) == true
+            val isSelected = currentDestination?.hierarchy?.any { dest ->
+                dest.route?.startsWith(item.route) == true
             } == true
 
             NavigationBarItem(
@@ -174,19 +249,18 @@ private fun AdbBottomBar(
                             saveState = true
                         }
                         launchSingleTop = true
-                        restoreState = true
+                        restoreState    = true
                     }
                 },
                 icon = {
                     Icon(
-                        imageVector = if (isSelected) item.selectedIcon
-                        else item.unselectedIcon,
+                        if (isSelected) item.selectedIcon else item.unselectedIcon,
                         contentDescription = item.label
                     )
                 },
                 label = {
                     Text(
-                        text       = item.label,
+                        item.label,
                         fontSize   = 10.sp,
                         fontWeight = if (isSelected) FontWeight.SemiBold
                         else FontWeight.Normal
@@ -196,46 +270,3 @@ private fun AdbBottomBar(
         }
     }
 }
-
-sealed class BottomNavItem(
-    val selectedIcon: ImageVector,
-    val unselectedIcon: ImageVector,
-    val label: String,
-    val route: String
-) {
-    object Home : BottomNavItem(
-        selectedIcon   = Icons.Filled.Home,
-        unselectedIcon = Icons.Outlined.Home,
-        label          = "Home",
-        route          = Routes.HOME
-    )
-
-    object AppManager : BottomNavItem(
-        selectedIcon   = Icons.Filled.Apps,
-        unselectedIcon = Icons.Outlined.Apps,
-        label          = "Apps",
-        route          = Routes.APP_MANAGER_SCREEN
-    )
-
-    object DeviceInfo : BottomNavItem(
-        selectedIcon   = Icons.Filled.PhoneAndroid,
-        unselectedIcon = Icons.Outlined.PhoneAndroid,
-        label          = "Device",
-        route          = Routes.DEVICE_INFO_SCREEN
-    )
-
-    object Logcat : BottomNavItem(
-        selectedIcon   = Icons.Filled.Terminal,
-        unselectedIcon = Icons.Outlined.Terminal,
-        label          = "Logcat",
-        route          = Routes.LOGCAT_SCREEN
-    )
-
-}
-
-val bottomNavItems = listOf(
-    BottomNavItem.Home,
-    BottomNavItem.AppManager,
-    BottomNavItem.DeviceInfo,
-    BottomNavItem.Logcat,
-)
