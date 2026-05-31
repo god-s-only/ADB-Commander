@@ -10,6 +10,7 @@ import com.adbcommand.app.data.repository.CommandsRepositoryImpl
 import com.adbcommand.app.data.repository.DeviceInfoRepositoryImpl
 import com.adbcommand.app.data.repository.HomeRepositoryImpl
 import com.adbcommand.app.data.repository.LogcatRepositoryImpl
+import com.adbcommand.app.data.repository.ProcessMonitorRepositoryImpl
 import com.adbcommand.app.data.repository.ShizukuAppManagerRepository
 import com.adbcommand.app.data.repository.StripeBillingRepositoryImpl
 import com.adbcommand.app.domain.repository.AppInspectorRepository
@@ -20,6 +21,7 @@ import com.adbcommand.app.domain.repository.CommandsRepository
 import com.adbcommand.app.domain.repository.DeviceInfoRepository
 import com.adbcommand.app.domain.repository.HomeRepository
 import com.adbcommand.app.domain.repository.LogcatRepository
+import com.adbcommand.app.domain.repository.ProcessMonitorRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -76,5 +78,11 @@ object RepositoryModule {
     @Singleton
     fun provideAppInspectorRepository(@ApplicationContext context: Context): AppInspectorRepository{
         return AppInspectorRepositoryImpl(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideProcessMonitorRepository(shizuku: ShizukuManager): ProcessMonitorRepository{
+        return ProcessMonitorRepositoryImpl(shizuku)
     }
 }

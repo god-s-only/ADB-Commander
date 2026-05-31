@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 
-@Singleton
 class ProcessMonitorRepositoryImpl @Inject constructor(
     private val shizuku: ShizukuManager
 ) : ProcessMonitorRepository {
