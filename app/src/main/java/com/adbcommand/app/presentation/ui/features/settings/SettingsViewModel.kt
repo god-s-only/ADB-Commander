@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.adbcommand.app.core.FeatureManager
 import com.adbcommand.app.data.remote.ShizukuManager
 import com.adbcommand.app.domain.models.UserEntitlement
+import com.adbcommand.app.domain.usecase.billing.RestorePurchaseUseCase
 import com.adbcommand.app.presentation.ui.features.home.ShizukuState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,9 +31,9 @@ sealed class SettingsEvent {
 }
 
 
-
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
+    private val restorePurchase: RestorePurchaseUseCase,
     private val shizukuManager: ShizukuManager,
     featureManager: FeatureManager
 ) : ViewModel() {
@@ -48,12 +49,35 @@ class SettingsViewModel @Inject constructor(
 
     fun onEvent(event: SettingsEvent) {
         when (event) {
+            is SettingsEvent.RestorePurchase -> restore()
             is SettingsEvent.RequestShizuku  -> shizukuManager.requestPermission()
             is SettingsEvent.DismissMessage  ->
                 _uiState.update { it.copy(restoreMessage = null) }
-            else -> Unit
         }
     }
 
-
+    private fun restore() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isRestoringPurchase = true) }
+            restorePurchase().fold(
+                onSuccess = { e ->
+                    _uiState.update {
+                        it.copy(
+                            isRestoringPurchase = false,
+                            restoreMessage = if (e.isPro) "Pro access restored!"
+                            else "No previous purchase found"
+                        )
+                    }
+                },
+                onFailure = { err ->
+                    _uiState.update {
+                        it.copy(
+                            isRestoringPurchase = false,
+                            restoreMessage = "Restore failed: ${err.message}"
+                        )
+                    }
+                }
+            )
+        }
+    }
 }
