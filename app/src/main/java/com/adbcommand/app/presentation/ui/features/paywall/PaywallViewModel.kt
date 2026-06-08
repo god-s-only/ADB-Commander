@@ -36,13 +36,10 @@ class PaywallViewModel @Inject constructor(
 
     fun onEvent(event: PaywallEvent) {
         when (event) {
-            is PaywallEvent.LoadIntent           -> loadIntent()
-            is PaywallEvent.PresentPaymentSheet  ->
-                _uiState.update { it.copy(readyToPresent = true) }
-            is PaywallEvent.DismissError         ->
-                _uiState.update { it.copy(errorMessage = null) }
-            is PaywallEvent.HandlePaymentResult  ->
-                handlePaymentResult(event.result)
+            is PaywallEvent.LoadIntent -> loadIntent()
+            is PaywallEvent.PresentPaymentSheet -> _uiState.update { it.copy(readyToPresent = true) }
+            is PaywallEvent.DismissError -> _uiState.update { it.copy(errorMessage = null) }
+            is PaywallEvent.HandlePaymentResult -> handlePaymentResult(event.result)
         }
     }
 
@@ -57,7 +54,7 @@ class PaywallViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isLoadingIntent = false,
-                            errorMessage    = "Could not reach payment server: ${err.message}"
+                            errorMessage = "Could not reach payment server: ${err.message}"
                         )
                     }
                 }
@@ -69,17 +66,16 @@ class PaywallViewModel @Inject constructor(
         _uiState.update { it.copy(readyToPresent = false) }
         when (result) {
             is PaymentSheetResult.Completed -> {
-                val intentId = _uiState.value.paymentIntent?.paymentIntentId
-                    ?: run {
-                        _uiState.update {
-                            it.copy(errorMessage = "Payment succeeded but verification failed. Contact support.")
-                        }
-                        return
+                val intentId = _uiState.value.paymentIntent?.paymentIntentId ?: run {
+                    _uiState.update {
+                        it.copy(errorMessage = "Payment succeeded but verification failed. Contact support.")
                     }
+                    return
+                }
                 verifyServerSide(intentId)
             }
-            is PaymentSheetResult.Canceled  -> {  }
-            is PaymentSheetResult.Failed    -> {
+            is PaymentSheetResult.Canceled -> {}
+            is PaymentSheetResult.Failed -> {
                 _uiState.update {
                     it.copy(errorMessage = result.error.localizedMessage ?: "Payment failed. Try again.")
                 }
@@ -105,7 +101,7 @@ class PaywallViewModel @Inject constructor(
                 onFailure = { err ->
                     _uiState.update {
                         it.copy(
-                            isVerifying  = false,
+                            isVerifying = false,
                             errorMessage = "Verification error: ${err.message}. " +
                                     "Your payment was received — restart to restore access."
                         )

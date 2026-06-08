@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.adbcommand.app.domain.models.Feature
 import com.adbcommand.app.domain.models.LogLevel
 import com.adbcommand.app.domain.models.LogLine
 import com.adbcommand.app.domain.models.LogcatEvent
@@ -36,7 +37,8 @@ import com.adbcommand.app.domain.models.LogcatEvent
 @Composable
 fun LogcatScreen(
     onNavigateBack: () -> Unit,
-    viewModel: LogcatViewModel = hiltViewModel()
+    viewModel: LogcatViewModel = hiltViewModel(),
+    onNavigateToPaywall: (feature: Feature) -> Unit = {}
 ) {
     val state        by viewModel.uiState.collectAsStateWithLifecycle()
     val listState     = rememberLazyListState()

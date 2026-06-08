@@ -1,8 +1,14 @@
 package com.adbcommand.app.presentation.ui.components
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.PhoneAndroid
+import androidx.compose.material.icons.filled.Terminal
+import androidx.compose.material.icons.outlined.Apps
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.PhoneAndroid
+import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.adbcommand.app.core.Routes
 
@@ -13,29 +19,28 @@ sealed class BottomNavItem(
     val route: String
 ) {
     object Home : BottomNavItem(
-        Icons.Filled.Home,      Icons.Outlined.Home,
-        "Home",
-        Routes.HOME
+        selectedIcon = Icons.Filled.Home,
+        unselectedIcon = Icons.Outlined.Home,
+        label = "Home",
+        route = Routes.HOME
     )
     object AppManager : BottomNavItem(
-        Icons.Filled.Apps,      Icons.Outlined.Apps,
-        "Apps",
-        Routes.APP_MANAGER_SCREEN
+        selectedIcon = Icons.Filled.Apps,
+        unselectedIcon = Icons.Outlined.Apps,
+        label = "Apps",
+        route = Routes.APP_MANAGER_SCREEN
     )
     object DeviceInfo : BottomNavItem(
-        Icons.Filled.PhoneAndroid, Icons.Outlined.PhoneAndroid,
-        "Device",
-        Routes.DEVICE_INFO_SCREEN
+        selectedIcon = Icons.Filled.PhoneAndroid,
+        unselectedIcon = Icons.Outlined.PhoneAndroid,
+        label = "Device",
+        route = Routes.DEVICE_INFO_SCREEN
     )
     object Logcat : BottomNavItem(
-        Icons.Filled.Terminal,  Icons.Outlined.Terminal,
-        "Logcat",
-        Routes.LOGCAT_SCREEN
-    )
-    object Commands : BottomNavItem(
-        Icons.Filled.Code,      Icons.Outlined.Code,
-        "Commands",
-        Routes.COMMANDS_SCREEN
+        selectedIcon = Icons.Filled.Terminal,
+        unselectedIcon = Icons.Outlined.Terminal,
+        label = "Logcat",
+        route = Routes.LOGCAT_SCREEN
     )
 }
 
@@ -43,16 +48,15 @@ val bottomNavItems = listOf(
     BottomNavItem.Home,
     BottomNavItem.AppManager,
     BottomNavItem.DeviceInfo,
-    BottomNavItem.Logcat,
-    BottomNavItem.Commands
+    BottomNavItem.Logcat
 )
 
-val detailRoutes = setOf(
-    Routes.SETTINGS_SCREEN,
-    Routes.PAYWALL_SCREEN,
-    Routes.CAPTURE_SCREEN,
+val detailRoutes = listOf(
+    Routes.COMMANDS_SCREEN,
     Routes.APP_INSPECTOR_SCREEN,
+    Routes.SETTINGS_SCREEN,
+    Routes.CAPTURE_SCREEN,
     Routes.PROCESS_MONITOR_SCREEN,
     Routes.INTENT_SENDER_SCREEN,
-    Routes.COMMANDS_SCREEN
+    Routes.PAYWALL_SCREEN
 )

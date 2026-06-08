@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
 import com.adbcommand.app.core.CaptureCommands
 import com.adbcommand.app.data.remote.ShizukuManager
@@ -127,6 +128,7 @@ class CaptureRepositoryImpl @Inject constructor(
             }
         }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun startRecording(): Flow<Long> = flow {
         try {
             shizuku.run(CaptureCommands.mkdirCapture())

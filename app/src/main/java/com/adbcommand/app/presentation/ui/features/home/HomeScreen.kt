@@ -27,7 +27,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 @Composable
 fun AdbCommanderHome(
     viewModel: HomeViewModel = hiltViewModel(),
-    onShowCommands: (ip: String, adbPort: String, pairingPort: String, code: String) -> Unit = { _, _, _, _ -> }
+    onShowCommands: (ip: String, adbPort: String, pairingPort: String, code: String) -> Unit = { _, _, _, _ -> },
+    onNavigateToSettings: () -> Unit = {},
+    onNavigateToCapture: () -> Unit = {},
+    onNavigateToProcessMonitor: () -> Unit = {},
+    onNavigateToIntentSender: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 

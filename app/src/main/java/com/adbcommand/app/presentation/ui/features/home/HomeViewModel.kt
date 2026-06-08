@@ -9,8 +9,10 @@ import com.adbcommand.app.domain.usecase.home.LoadDeviceInfoUseCase
 import com.adbcommand.app.domain.usecase.home.TestConnectionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -37,6 +39,7 @@ class HomeViewModel @Inject constructor(
     val uiState: StateFlow<HomeScreenState> = _uiState.asStateFlow()
 
     val shizukuState: StateFlow<ShizukuState> = shizukuManager.state
+        .stateIn(viewModelScope, SharingStarted.Eagerly, ShizukuState())
 
     init {
         onEvent(HomeEvent.LoadInfo)

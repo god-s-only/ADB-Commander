@@ -215,7 +215,7 @@ fun SettingsScreen(
                         onClick = {
                             val intent = Intent(
                                 Intent.ACTION_VIEW,
-                                Uri.parse("https://github.com/yourusername/adb-commander")
+                                Uri.parse("https://github.com/god-s-only/ADB-Commander")
                             ).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }
                             context.startActivity(intent)
                         }
@@ -342,16 +342,23 @@ private fun SettingsItem(
         },
         modifier = Modifier.padding(0.dp)
     )
-    DisposableEffect(Unit) {
-        onDispose { }
-    }
-    // Make the whole row tappable
     Surface(
         onClick = onClick,
-        color   = androidx.compose.ui.graphics.Color.Transparent,
-        modifier = Modifier
-            .fillMaxWidth()
-            .offset(y = (-56).dp)
-            .height(56.dp)
-    ) {}
+        color = androidx.compose.ui.graphics.Color.Transparent,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(icon, null, tint = MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.width(16.dp))
+            Text(label, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+            } else {
+                Icon(Icons.Default.ChevronRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.outline)
+            }
+        }
+    }
 }

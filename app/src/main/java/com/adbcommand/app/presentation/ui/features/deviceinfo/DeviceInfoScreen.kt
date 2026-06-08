@@ -24,6 +24,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.adbcommand.app.domain.models.DeviceInfo
+import com.adbcommand.app.domain.models.Feature
+import com.adbcommand.app.presentation.ui.features.paywall.ProGatedButton
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -31,9 +33,11 @@ import kotlinx.coroutines.launch
 @Composable
 fun DeviceInfoScreen(
     onNavigateBack: () -> Unit,
-    viewModel: DeviceInfoViewModel = hiltViewModel()
+    viewModel: DeviceInfoViewModel = hiltViewModel(),
+    onNavigateToPaywall: (feature: Feature) -> Unit = {}
 ) {
     val state     by viewModel.uiState.collectAsStateWithLifecycle()
+    val isPro  by viewModel.isPro.collectAsStateWithLifecycle()
     val clipboard  = LocalClipboardManager.current
     val scope      = rememberCoroutineScope()
 
@@ -148,33 +152,16 @@ fun DeviceInfoScreen(
 
                     Spacer(Modifier.weight(1f))
 
-                    Button(
-                        onClick  = { viewModel.onEvent(DeviceInfoEvent.CopyProfile) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(60.dp),
-                        shape    = RoundedCornerShape(16.dp),
-                        enabled  = info != null
+                    ProGatedButton(
+                        feature = Feature.DEVICE_PROFILE_COPY,
+                        isPro = isPro,
+                        onUnlocked = { viewModel.onEvent(DeviceInfoEvent.CopyProfile) },
+                        onLocked = { onNavigateToPaywall(Feature.DEVICE_PROFILE_COPY) },
+                        modifier = Modifier.fillMaxWidth().height(60.dp)
                     ) {
-                        AnimatedContent(
-                            targetState = state.profileCopied,
-                            label       = "copy_button_label"
-                        ) { copied ->
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = if (copied) Icons.Default.Check
-                                    else Icons.Default.ContentCopy,
-                                    contentDescription = null
-                                )
-                                Spacer(Modifier.width(12.dp))
-                                Text(
-                                    text       = if (copied) "Profile Copied!"
-                                    else "Copy Device Profile",
-                                    fontSize   = 16.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
+                        Icon(if (state.profileCopied) Icons.Default.Check else Icons.Default.ContentCopy, null)
+                        Spacer(Modifier.width(12.dp))
+                        Text(if (state.profileCopied) "Profile Copied!" else "Copy Device Profile", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
 
                     Spacer(Modifier.height(24.dp))
