@@ -29,12 +29,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.adbcommand.app.domain.models.AppActionResult
 import com.adbcommand.app.domain.models.AppInfo
+import com.adbcommand.app.domain.models.Feature
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppManagerScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToInspector: (packageName: String) -> Unit = {},
+    onNavigateToPaywall: (feature: Feature) -> Unit = {},
     viewModel: AppManagerViewModel = hiltViewModel()
 ) {
     val state        by viewModel.uiState.collectAsStateWithLifecycle()
@@ -241,7 +244,6 @@ fun AppManagerScreen(
         }
     }
 
-    // ── Bottom sheet ──────────────────────────────────────────────────────────
     if (state.selectedApp != null) {
         ModalBottomSheet(
             onDismissRequest = { viewModel.onEvent(AppManagerEvent.DismissBottomSheet) },
@@ -249,20 +251,19 @@ fun AppManagerScreen(
             shape            = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
         ) {
             AppActionsSheet(
-                app          = state.selectedApp!!,
+                app = state.selectedApp!!,
                 pendingAction = state.pendingAction,
-                onKill       = { viewModel.onEvent(AppManagerEvent.Kill(it)) },
-                onClear      = { viewModel.onEvent(AppManagerEvent.ClearData(it)) },
-                onExtract    = { viewModel.onEvent(AppManagerEvent.ExtractApk(it)) },
-                onUninstall  = { viewModel.onEvent(AppManagerEvent.Uninstall(it)) },
-                onLaunch     = { viewModel.onEvent(AppManagerEvent.Launch(it)) },
-                onDismiss    = { viewModel.onEvent(AppManagerEvent.DismissBottomSheet) }
+                onKill = { viewModel.onEvent(AppManagerEvent.Kill(it)) },
+                onClear = { viewModel.onEvent(AppManagerEvent.ClearData(it)) },
+                onExtract = { viewModel.onEvent(AppManagerEvent.ExtractApk(it)) },
+                onUninstall = { viewModel.onEvent(AppManagerEvent.Uninstall(it)) },
+                onLaunch = { viewModel.onEvent(AppManagerEvent.Launch(it)) },
+                onDismiss = { viewModel.onEvent(AppManagerEvent.DismissBottomSheet) },
+                onNavigateToInspector = onNavigateToInspector
             )
         }
     }
 }
-
-// ── Search bar ────────────────────────────────────────────────────────────────
 
 @Composable
 private fun AppSearchBar(
@@ -395,7 +396,8 @@ private fun AppActionsSheet(
     onExtract: (String) -> Unit,
     onUninstall: (String) -> Unit,
     onLaunch: (String) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onNavigateToInspector: (packageName: String) -> Unit = {}
 ) {
     Column(
         modifier            = Modifier
@@ -471,6 +473,16 @@ private fun AppActionsSheet(
             containerColor = MaterialTheme.colorScheme.errorContainer,
             contentColor   = MaterialTheme.colorScheme.onErrorContainer,
             onClick        = { onUninstall(app.packageName) }
+        )
+
+        ActionButton(
+            label = "Inspect App",
+            icon = Icons.Default.ManageSearch,
+            isLoading = false,
+            onClick = {
+                onDismiss()
+                onNavigateToInspector(app.packageName)
+            }
         )
 
         Spacer(Modifier.height(4.dp))
