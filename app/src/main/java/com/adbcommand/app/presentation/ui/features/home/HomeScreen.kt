@@ -141,7 +141,7 @@ fun AdbCommanderHome(
                 )
             ) {
                 Column(
-                    modifier            = Modifier.padding(20.dp),
+                    modifier = Modifier.padding(20.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     AdbField(
@@ -235,6 +235,43 @@ fun AdbCommanderHome(
 
             // ── Bottom actions ────────────────────────────────────────────────
             Spacer(modifier = Modifier.weight(1f))
+
+            // ── Tools ──────────────────────────────────────────────────────────
+            Text(
+                text = "Tools",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                FilledTonalButton(
+                    onClick = onNavigateToCapture,
+                    modifier = Modifier.weight(1f).height(52.dp),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.Screenshot, null, Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Capture", fontSize = 12.sp)
+                }
+                FilledTonalButton(
+                    onClick = onNavigateToProcessMonitor,
+                    modifier = Modifier.weight(1f).height(52.dp),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.Memory, null, Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Processes", fontSize = 12.sp)
+                }
+                FilledTonalButton(
+                    onClick = onNavigateToIntentSender,
+                    modifier = Modifier.weight(1f).height(52.dp),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.Send, null, Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Intents", fontSize = 12.sp)
+                }
+            }
 
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Button(

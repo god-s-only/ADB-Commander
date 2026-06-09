@@ -76,7 +76,9 @@ class MainActivity : ComponentActivity() {
                     NavHost(
                         navController = navController,
                         startDestination = Routes.HOME,
-                        modifier = Modifier.fillMaxSize().padding(innerPadding)
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = innerPadding.calculateTopPadding())
                     ) {
                         composable(Routes.HOME) {
                             AdbCommanderHome(
