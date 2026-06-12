@@ -61,11 +61,6 @@ fun DeviceInfoScreen(
                         letterSpacing = (-0.5).sp
                     )
                 },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                },
                 actions = {
                     IconButton(onClick = { viewModel.onEvent(DeviceInfoEvent.Refresh) }) {
                         if (state.isLoading) {

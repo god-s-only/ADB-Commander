@@ -40,9 +40,9 @@ fun LogcatScreen(
     viewModel: LogcatViewModel = hiltViewModel(),
     onNavigateToPaywall: (feature: Feature) -> Unit = {}
 ) {
-    val state        by viewModel.uiState.collectAsStateWithLifecycle()
-    val listState     = rememberLazyListState()
-    val snackbarHost  = remember { SnackbarHostState() }
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val listState = rememberLazyListState()
+    val snackbarHost = remember { SnackbarHostState() }
 
     LaunchedEffect(state.lines.size) {
         if (state.autoScroll && state.lines.isNotEmpty()) {
@@ -72,11 +72,6 @@ fun LogcatScreen(
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.outline
                         )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {

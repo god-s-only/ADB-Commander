@@ -31,10 +31,10 @@ fun SettingsScreen(
     onNavigateToPaywall: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
-    val state       by viewModel.uiState.collectAsStateWithLifecycle()
-    val shizuku     by viewModel.shizukuState.collectAsStateWithLifecycle()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val shizuku by viewModel.shizukuState.collectAsStateWithLifecycle()
     val entitlement by viewModel.entitlement.collectAsStateWithLifecycle()
-    val context      = LocalContext.current
+    val context = LocalContext.current
     val snackbarHost = remember { SnackbarHostState() }
 
     LaunchedEffect(state.restoreMessage) {
@@ -50,14 +50,9 @@ fun SettingsScreen(
                 title = {
                     Text(
                         "Settings",
-                        fontWeight    = FontWeight.ExtraBold,
+                        fontWeight = FontWeight.ExtraBold,
                         letterSpacing = (-0.5).sp
                     )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background

@@ -67,13 +67,7 @@ fun AppManagerScreen(
                         letterSpacing = (-0.5).sp
                     )
                 },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                },
                 actions = {
-                    // Toggle system apps
                     IconButton(onClick = { viewModel.onEvent(AppManagerEvent.ToggleSystemApps) }) {
                         Icon(
                             imageVector = if (state.includeSystem)
