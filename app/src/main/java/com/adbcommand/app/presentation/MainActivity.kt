@@ -78,7 +78,7 @@ class MainActivity : ComponentActivity() {
                         startDestination = Routes.HOME,
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(top = innerPadding.calculateTopPadding())
+                            .padding(innerPadding)
                     ) {
                         composable(Routes.HOME) {
                             AdbCommanderHome(
