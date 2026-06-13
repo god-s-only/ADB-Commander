@@ -1,5 +1,6 @@
 package com.adbcommand.app.presentation.ui.features.home
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -23,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdbCommanderHome(
@@ -37,7 +39,7 @@ fun AdbCommanderHome(
 
     Scaffold(
         topBar = {
-            TopAppBar(                                      // ← LargeTopAppBar → TopAppBar
+            TopAppBar(
                 title = {
                     Text(
                         "ADB Commander",
@@ -62,12 +64,11 @@ fun AdbCommanderHome(
                 )
             )
         }
-    ) { padding ->
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 20.dp)
+                .padding(start = 20.dp, end = 20.dp, top = 100.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {

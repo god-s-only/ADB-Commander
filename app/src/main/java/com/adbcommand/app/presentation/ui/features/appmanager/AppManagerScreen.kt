@@ -1,5 +1,6 @@
 package com.adbcommand.app.presentation.ui.features.appmanager
 
+import android.annotation.SuppressLint
 import android.graphics.drawable.Drawable
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -32,6 +33,7 @@ import com.adbcommand.app.domain.models.AppInfo
 import com.adbcommand.app.domain.models.Feature
 import kotlinx.coroutines.launch
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppManagerScreen(
@@ -99,12 +101,12 @@ fun AppManagerScreen(
             )
         },
         snackbarHost = { SnackbarHost(snackbarHost) }
-    ) { padding ->
+    ) {
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(top = 100.dp)
         ) {
 
             // ── Search bar ────────────────────────────────────────────────────

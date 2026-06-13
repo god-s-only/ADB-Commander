@@ -1,5 +1,6 @@
 package com.adbcommand.app.presentation.ui.features.logcat
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -33,6 +34,7 @@ import com.adbcommand.app.domain.models.LogLevel
 import com.adbcommand.app.domain.models.LogLine
 import com.adbcommand.app.domain.models.LogcatEvent
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LogcatScreen(
@@ -108,14 +110,13 @@ fun LogcatScreen(
             )
         },
         snackbarHost = { SnackbarHost(snackbarHost) }
-    ) { padding ->
+    ) {
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(top = 100.dp)
         ) {
-
             FilterBar(
                 filter   = state.filter,
                 onEvent  = viewModel::onEvent,
