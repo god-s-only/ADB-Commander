@@ -1,5 +1,6 @@
 package com.adbcommand.app.presentation.ui.features.home
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -23,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdbCommanderHome(
@@ -37,21 +39,13 @@ fun AdbCommanderHome(
 
     Scaffold(
         topBar = {
-            LargeTopAppBar(
-                navigationIcon = {
+            TopAppBar(
+                title = {
                     Text(
                         "ADB Commander",
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = (-0.5).sp
                     )
-                },
-                title = {
-                    Column{
-                        ShizukuStatusCard(
-                            state = viewModel.shizukuState.collectAsStateWithLifecycle().value,
-                            onRequestPermission = viewModel::onEvent
-                        )
-                    }
                 },
                 actions = {
                     IconButton(onClick = { viewModel.onEvent(HomeEvent.LoadInfo) }) {
@@ -65,27 +59,31 @@ fun AdbCommanderHome(
                         }
                     }
                 },
-                colors = TopAppBarDefaults.largeTopAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
                 )
             )
         }
-    ) { padding ->
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 20.dp)
+                .padding(start = 20.dp, end = 20.dp, top = 100.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
 
+            // ── Shizuku status (now lives naturally in the flow) ──────────────
+            ShizukuStatusCard(
+                state = viewModel.shizukuState.collectAsStateWithLifecycle().value,
+                onRequestPermission = viewModel::onEvent
+            )
+
             // ── Connection Details ────────────────────────────────────────────
             Text(
-                text     = "Connection Details",
-                style    = MaterialTheme.typography.titleMedium,
-                color    = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(top = 8.dp)
+                text  = "Connection Details",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
             )
 
             Card(
@@ -115,7 +113,6 @@ fun AdbCommanderHome(
                         icon  = Icons.Default.Router
                     )
 
-                    // Show error if IP or ports couldn't be read
                     AnimatedVisibility(
                         visible = state.infoError != null,
                         enter   = fadeIn(),
@@ -141,7 +138,7 @@ fun AdbCommanderHome(
                 )
             ) {
                 Column(
-                    modifier = Modifier.padding(20.dp),
+                    modifier            = Modifier.padding(20.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     AdbField(
@@ -150,7 +147,6 @@ fun AdbCommanderHome(
                         icon  = Icons.Default.Numbers
                     )
 
-                    // Message shown when code can't be read automatically
                     AnimatedVisibility(visible = state.codeMessage != null) {
                         state.codeMessage?.let { msg ->
                             Text(
@@ -165,17 +161,12 @@ fun AdbCommanderHome(
                         modifier              = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        // Generate button — tries to read pairing code from system
                         Button(
                             onClick  = { viewModel.onEvent(HomeEvent.GenerateCode) },
                             modifier = Modifier
                                 .weight(1f)
                                 .height(52.dp),
-                            shape  = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor   = MaterialTheme.colorScheme.onPrimary
-                            )
+                            shape  = RoundedCornerShape(12.dp)
                         ) {
                             if (state.isGeneratingCode) {
                                 CircularProgressIndicator(
@@ -189,12 +180,11 @@ fun AdbCommanderHome(
                                     contentDescription = null,
                                     modifier = Modifier.size(18.dp)
                                 )
-                                Spacer(Modifier.width(8.dp))
+                                Spacer(Modifier.width(6.dp))
                                 Text("Generate", fontWeight = FontWeight.Bold)
                             }
                         }
 
-                        // Scan QR — placeholder for camera scanner
                         FilledTonalButton(
                             onClick  = { /* TODO: open QR scanner screen */ },
                             modifier = Modifier
@@ -207,7 +197,7 @@ fun AdbCommanderHome(
                                 contentDescription = null,
                                 modifier = Modifier.size(18.dp)
                             )
-                            Spacer(Modifier.width(8.dp))
+                            Spacer(Modifier.width(6.dp))
                             Text("Scan QR", fontWeight = FontWeight.Bold)
                         }
                     }
@@ -215,7 +205,6 @@ fun AdbCommanderHome(
             }
 
             // ── Copy Commands ─────────────────────────────────────────────────
-            // Only show when we have enough info to build valid commands
             AnimatedVisibility(
                 visible = state.ip.isNotBlank() && state.pairingPort.isNotBlank()
             ) {
@@ -225,7 +214,7 @@ fun AdbCommanderHome(
                 )
             }
 
-            // ── Connection status snackbar-style banner ───────────────────────
+            // ── Connection status banner ──────────────────────────────────────
             AnimatedVisibility(visible = state.connectionStatus != null) {
                 ConnectionStatusBanner(
                     status    = state.connectionStatus,
@@ -233,52 +222,45 @@ fun AdbCommanderHome(
                 )
             }
 
-            // ── Bottom actions ────────────────────────────────────────────────
-            Spacer(modifier = Modifier.weight(1f))
-
-            // ── Tools ──────────────────────────────────────────────────────────
+            // ── Tools ─────────────────────────────────────────────────────────
             Text(
-                text = "Tools",
+                text  = "Tools",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary
             )
 
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                FilledTonalButton(
+            // Icon-only tool buttons — no text wrapping possible
+            Row(
+                modifier              = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                ToolButton(
+                    icon    = Icons.Default.Screenshot,
+                    label   = "Capture",
                     onClick = onNavigateToCapture,
-                    modifier = Modifier.weight(1f).height(52.dp),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Icon(Icons.Default.Screenshot, null, Modifier.size(16.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Capture", fontSize = 12.sp)
-                }
-                FilledTonalButton(
+                    modifier = Modifier.weight(1f)
+                )
+                ToolButton(
+                    icon    = Icons.Default.Memory,
+                    label   = "Processes",
                     onClick = onNavigateToProcessMonitor,
-                    modifier = Modifier.weight(1f).height(52.dp),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Icon(Icons.Default.Memory, null, Modifier.size(16.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Processes", fontSize = 12.sp)
-                }
-                FilledTonalButton(
+                    modifier = Modifier.weight(1f)
+                )
+                ToolButton(
+                    icon    = Icons.Default.Send,
+                    label   = "Intents",
                     onClick = onNavigateToIntentSender,
-                    modifier = Modifier.weight(1f).height(52.dp),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Icon(Icons.Default.Send, null, Modifier.size(16.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Intents", fontSize = 12.sp)
-                }
+                    modifier = Modifier.weight(1f)
+                )
             }
 
+            // ── Primary actions ───────────────────────────────────────────────
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Button(
                     onClick  = { viewModel.onEvent(HomeEvent.TestConnection) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(60.dp),
+                        .height(56.dp),
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     if (state.isTestingConnection) {
@@ -307,16 +289,50 @@ fun AdbCommanderHome(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(60.dp),
+                        .height(56.dp),
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Icon(Icons.Default.Terminal, contentDescription = null)
                     Spacer(Modifier.width(12.dp))
-                    Text("Show ADB Commands for this device", fontSize = 14.sp)
+                    Text(
+                        text = "Show ADB Commands",
+                        fontSize = 15.sp,
+                        maxLines = 1
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+    }
+}
+
+
+@Composable
+private fun ToolButton(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    FilledTonalButton(
+        onClick  = onClick,
+        modifier = modifier.height(64.dp),
+        shape    = RoundedCornerShape(14.dp),
+        contentPadding = PaddingValues(vertical = 8.dp, horizontal = 4.dp)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text     = label,
+                fontSize = 11.sp,
+                maxLines = 1,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }

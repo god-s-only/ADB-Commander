@@ -1,5 +1,6 @@
 package com.adbcommand.app.presentation.ui.features.deviceinfo
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -29,6 +30,7 @@ import com.adbcommand.app.presentation.ui.features.paywall.ProGatedButton
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DeviceInfoScreen(
@@ -61,11 +63,6 @@ fun DeviceInfoScreen(
                         letterSpacing = (-0.5).sp
                     )
                 },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                },
                 actions = {
                     IconButton(onClick = { viewModel.onEvent(DeviceInfoEvent.Refresh) }) {
                         if (state.isLoading) {
@@ -83,15 +80,15 @@ fun DeviceInfoScreen(
                 )
             )
         }
-    ) { padding ->
+    ) {
 
         AnimatedContent(
             targetState  = state.isLoading && state.deviceInfo == null,
             transitionSpec = { fadeIn() togetherWith fadeOut() },
-            label        = "device_info_content",
-            modifier     = Modifier
+            label = "device_info_content",
+            modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(top = 100.dp)
         ) { isFirstLoad ->
 
             if (isFirstLoad) {

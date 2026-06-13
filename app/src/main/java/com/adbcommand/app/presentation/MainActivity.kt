@@ -1,5 +1,6 @@
 package com.adbcommand.app.presentation
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -72,13 +73,11 @@ class MainActivity : ComponentActivity() {
                             AdbBottomBar(navController, currentDestination)
                         }
                     }
-                ) { innerPadding ->
+                ) {
                     NavHost(
                         navController = navController,
                         startDestination = Routes.HOME,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(top = innerPadding.calculateTopPadding())
+                        modifier = Modifier.padding(it)
                     ) {
                         composable(Routes.HOME) {
                             AdbCommanderHome(

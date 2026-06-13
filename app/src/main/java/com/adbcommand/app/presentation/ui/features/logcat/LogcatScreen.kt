@@ -1,5 +1,6 @@
 package com.adbcommand.app.presentation.ui.features.logcat
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -33,6 +34,7 @@ import com.adbcommand.app.domain.models.LogLevel
 import com.adbcommand.app.domain.models.LogLine
 import com.adbcommand.app.domain.models.LogcatEvent
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LogcatScreen(
@@ -40,9 +42,9 @@ fun LogcatScreen(
     viewModel: LogcatViewModel = hiltViewModel(),
     onNavigateToPaywall: (feature: Feature) -> Unit = {}
 ) {
-    val state        by viewModel.uiState.collectAsStateWithLifecycle()
-    val listState     = rememberLazyListState()
-    val snackbarHost  = remember { SnackbarHostState() }
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val listState = rememberLazyListState()
+    val snackbarHost = remember { SnackbarHostState() }
 
     LaunchedEffect(state.lines.size) {
         if (state.autoScroll && state.lines.isNotEmpty()) {
@@ -72,11 +74,6 @@ fun LogcatScreen(
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.outline
                         )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
@@ -113,14 +110,13 @@ fun LogcatScreen(
             )
         },
         snackbarHost = { SnackbarHost(snackbarHost) }
-    ) { padding ->
+    ) {
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(top = 100.dp)
         ) {
-
             FilterBar(
                 filter   = state.filter,
                 onEvent  = viewModel::onEvent,
