@@ -3,13 +3,13 @@ package com.adbcommand.app.data.repository
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
 import com.adbcommand.app.core.CaptureCommands
 import com.adbcommand.app.data.remote.ShizukuManager
@@ -24,6 +24,10 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -36,55 +40,118 @@ class CaptureRepositoryImpl @Inject constructor(
     companion object {
         private const val TAG = "CaptureRepository"
     }
+
     private var recordingProcess: Process? = null
-    private var recordingFilePath: String  = ""
-    private var recordingStartMs: Long     = 0L
+    private var recordingFilePath: String = ""
+    private var recordingStartMs: Long = 0L
+
 
     override suspend fun takeScreenshot(): Result<CapturedScreenshot> =
         withContext(Dispatchers.IO) {
             try {
-                shizuku.run(CaptureCommands.mkdirCapture())
-                val filePath = CaptureCommands.newScreenshotPath()
-                val result = shizuku.run(CaptureCommands.takeScreenshot(filePath))
+                val cacheDir = context.cacheDir
+                val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+                val cacheFile = File(cacheDir, "screenshot_$timestamp.png")
+                val cachePath = cacheFile.absolutePath
 
-                if (!result.success && result.error.isNotBlank()) {
-                    return@withContext Result.failure(
-                        Exception("screencap failed: ${result.error}")
-                    )
+                val result = shizuku.run("screencap -p $cachePath")
+
+                delay(500)
+
+                if (!cacheFile.exists() || cacheFile.length() == 0L) {
+                    return@withContext takeScreenshotFallback(cacheFile, cachePath, timestamp)
                 }
 
-                delay(300)
-
-                val file = File(filePath)
-                if (!file.exists()) {
-                    return@withContext Result.failure(
-                        Exception("Screenshot file not found at $filePath")
-                    )
-                }
-
-                val bitmap = BitmapFactory.decodeFile(filePath)
+                val bitmap = BitmapFactory.decodeFile(cachePath)
                     ?: return@withContext Result.failure(
-                        Exception("Could not decode screenshot file")
+                        Exception("Could not decode screenshot — file may be corrupted")
                     )
-                scanFileToMediaStore(file, "image/png")
 
-                Log.d(TAG, "Screenshot saved: $filePath (${file.length()} bytes)")
+                val savedPath = saveImageToPublicStorage(cacheFile, timestamp)
+
+                Log.d(TAG, "Screenshot saved: $savedPath")
 
                 Result.success(
                     CapturedScreenshot(
                         bitmap = bitmap,
-                        filePath = filePath,
-                        sizeBytes = file.length()
+                        filePath = savedPath ?: cachePath,
+                        sizeBytes = cacheFile.length()
                     )
                 )
             } catch (e: Exception) {
                 Log.e(TAG, "takeScreenshot failed", e)
-                Result.failure(e)
+                Result.failure(Exception("Screenshot failed: ${e.message}"))
             }
         }
 
-    override suspend fun shareScreenshot(filePath: String): Result<Unit> =
-        shareFile(filePath, "image/png", "Share Screenshot")
+    private suspend fun takeScreenshotFallback(
+        cacheFile: File,
+        cachePath: String,
+        timestamp: String
+    ): Result<CapturedScreenshot> {
+        return try {
+            val process = Runtime.getRuntime().exec(arrayOf("screencap", "-p", cachePath))
+            process.waitFor()
+            delay(300)
+
+            if (!cacheFile.exists() || cacheFile.length() == 0L) {
+                return Result.failure(Exception("Screenshot failed: device did not produce output file"))
+            }
+
+            val bitmap = BitmapFactory.decodeFile(cachePath)
+                ?: return Result.failure(Exception("Could not decode screenshot file"))
+
+            val savedPath = saveImageToPublicStorage(cacheFile, timestamp)
+
+            Result.success(
+                CapturedScreenshot(
+                    bitmap = bitmap,
+                    filePath = savedPath ?: cachePath,
+                    sizeBytes = cacheFile.length()
+                )
+            )
+        } catch (e: Exception) {
+            Result.failure(Exception("Screenshot fallback failed: ${e.message}"))
+        }
+    }
+
+    private fun saveImageToPublicStorage(file: File, timestamp: String): String? {
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val values = ContentValues().apply {
+                    put(MediaStore.Images.Media.DISPLAY_NAME, "screenshot_$timestamp.png")
+                    put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+                    put(MediaStore.Images.Media.RELATIVE_PATH,
+                        "${Environment.DIRECTORY_PICTURES}/AdbCommander")
+                    put(MediaStore.Images.Media.IS_PENDING, 1)
+                }
+                val uri = context.contentResolver.insert(
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values
+                ) ?: return null
+
+                context.contentResolver.openOutputStream(uri)?.use { out ->
+                    file.inputStream().use { it.copyTo(out) }
+                }
+
+                values.clear()
+                values.put(MediaStore.Images.Media.IS_PENDING, 0)
+                context.contentResolver.update(uri, values, null, null)
+                uri.toString()
+            } else {
+                val dir = File(
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),
+                    "AdbCommander"
+                )
+                dir.mkdirs()
+                val dest = File(dir, "screenshot_$timestamp.png")
+                file.copyTo(dest, overwrite = true)
+                dest.absolutePath
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "saveImageToPublicStorage failed (non-critical)", e)
+            null
+        }
+    }
 
     override suspend fun saveToGallery(filePath: String): Result<String> =
         withContext(Dispatchers.IO) {
@@ -93,63 +160,58 @@ class CaptureRepositoryImpl @Inject constructor(
                 if (!file.exists()) return@withContext Result.failure(
                     Exception("File not found: $filePath")
                 )
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    val values = ContentValues().apply {
-                        put(MediaStore.Images.Media.DISPLAY_NAME, file.name)
-                        put(MediaStore.Images.Media.MIME_TYPE, "image/png")
-                        put(MediaStore.Images.Media.RELATIVE_PATH,
-                            "${Environment.DIRECTORY_PICTURES}/AdbCommander")
-                        put(MediaStore.Images.Media.IS_PENDING, 1)
-                    }
-
-                    val uri = context.contentResolver.insert(
-                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values
-                    ) ?: return@withContext Result.failure(
-                        Exception("MediaStore insert failed")
-                    )
-
-                    context.contentResolver.openOutputStream(uri)?.use { out ->
-                        file.inputStream().use { it.copyTo(out) }
-                    }
-
-                    values.clear()
-                    values.put(MediaStore.Images.Media.IS_PENDING, 0)
-                    context.contentResolver.update(uri, values, null, null)
-
-                    Result.success(uri.toString())
-                } else {
-                    scanFileToMediaStore(file, "image/png")
-                    Result.success(filePath)
-                }
+                val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+                val path = saveImageToPublicStorage(file, timestamp)
+                    ?: return@withContext Result.failure(Exception("Failed to save to gallery"))
+                Result.success(path)
             } catch (e: Exception) {
-                Log.e(TAG, "saveToGallery failed", e)
-                Result.failure(e)
+                Result.failure(Exception("Save failed: ${e.message}"))
             }
         }
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    override suspend fun shareScreenshot(filePath: String): Result<Unit> =
+        shareFile(filePath, "image/png", "Share Screenshot")
+
+
     override fun startRecording(): Flow<Long> = flow {
         try {
-            shizuku.run(CaptureCommands.mkdirCapture())
+            val dir = File(
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES),
+                "AdbCommander"
+            )
+            dir.mkdirs()
 
-            recordingFilePath = CaptureCommands.newRecordingPath()
-            recordingStartMs  = System.currentTimeMillis()
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            recordingFilePath = "${dir.absolutePath}/recording_$timestamp.mp4"
+            recordingStartMs = System.currentTimeMillis()
 
-            recordingProcess = startRecordingProcess(
-                CaptureCommands.startRecording(recordingFilePath)
+            val cmd = arrayOf(
+                "screenrecord",
+                "--bit-rate", "8000000",
+                "--time-limit", "180",
+                recordingFilePath
             )
 
+            recordingProcess = Runtime.getRuntime().exec(cmd)
+
             if (recordingProcess == null) {
-                throw Exception("Failed to start screenrecord process")
+                throw Exception("Failed to start screenrecord")
             }
 
             Log.d(TAG, "Recording started: $recordingFilePath")
 
             val start = System.currentTimeMillis()
-            while (recordingProcess?.isAlive == true) {
-                emit(System.currentTimeMillis() - start)
-                delay(1000)
+
+            while (true) {
+                val process = recordingProcess ?: break
+                try {
+                    process.exitValue()
+                    break
+                } catch (e: IllegalThreadStateException) {
+                    // Still running — emit elapsed time
+                    emit(System.currentTimeMillis() - start)
+                    delay(1000)
+                }
             }
 
         } catch (e: Exception) {
@@ -157,6 +219,7 @@ class CaptureRepositoryImpl @Inject constructor(
             throw e
         } finally {
             recordingProcess?.destroy()
+            recordingProcess = null
         }
     }.flowOn(Dispatchers.IO)
 
@@ -164,22 +227,48 @@ class CaptureRepositoryImpl @Inject constructor(
         withContext(Dispatchers.IO) {
             try {
                 val durationMs = System.currentTimeMillis() - recordingStartMs
+                try {
+                    val pid = getPid(recordingProcess)
+                    if (pid > 0) {
+                        Runtime.getRuntime().exec(arrayOf("kill", "-2", pid.toString()))
+                        delay(1000)
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "SIGINT failed, falling back to destroy()", e)
+                }
 
                 recordingProcess?.destroy()
                 recordingProcess = null
 
-                delay(800)
+                delay(1200)
 
                 val file = File(recordingFilePath)
-                if (!file.exists()) {
+                if (!file.exists() || file.length() == 0L) {
                     return@withContext Result.failure(
-                        Exception("Recording file not found at $recordingFilePath")
+                        Exception("Recording file not found or empty at $recordingFilePath")
                     )
                 }
 
-                scanFileToMediaStore(file, "video/mp4")
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    val values = ContentValues().apply {
+                        put(MediaStore.Video.Media.DISPLAY_NAME, file.name)
+                        put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
+                        put(MediaStore.Video.Media.RELATIVE_PATH,
+                            "${Environment.DIRECTORY_MOVIES}/AdbCommander")
+                    }
+                    context.contentResolver.insert(
+                        MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values
+                    )
+                } else {
+                    @Suppress("DEPRECATION")
+                    context.sendBroadcast(
+                        Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE).apply {
+                            data = Uri.fromFile(file)
+                        }
+                    )
+                }
 
-                Log.d(TAG, "Recording stopped: $recordingFilePath (${durationMs}ms)")
+                Log.d(TAG, "Recording stopped: $recordingFilePath ($durationMs ms)")
 
                 Result.success(
                     RecordingSession(
@@ -191,49 +280,25 @@ class CaptureRepositoryImpl @Inject constructor(
                 )
             } catch (e: Exception) {
                 Log.e(TAG, "stopRecording failed", e)
-                Result.failure(e)
+                Result.failure(Exception("Stop recording failed: ${e.message}"))
             }
         }
 
     override suspend fun shareRecording(filePath: String): Result<Unit> =
         shareFile(filePath, "video/mp4", "Share Recording")
 
-    private fun startRecordingProcess(cmd: String): Process? {
-        return try {
-            val clazz  = Class.forName("rikka.shizuku.Shizuku")
-            val method = clazz.getDeclaredMethod(
-                "newProcess",
-                Array<String>::class.java,
-                Array<String>::class.java,
-                String::class.java
-            )
-            method.isAccessible = true
-            method.invoke(null, arrayOf("sh", "-c", cmd), null, null) as? Process
-        } catch (e: Exception) {
-            Log.e(TAG, "startRecordingProcess via Shizuku failed", e)
-            // Fallback to Runtime.exec
-            try {
-                Runtime.getRuntime().exec(arrayOf("sh", "-c", cmd))
-            } catch (ex: Exception) {
-                Log.e(TAG, "Runtime.exec fallback also failed", ex)
-                null
-            }
-        }
-    }
 
-    private fun scanFileToMediaStore(file: File, mimeType: String) {
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                return
+    private fun getPid(process: Process?): Int {
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                process?.pid() ?: -1
+            } else {
+                val field = process?.javaClass?.getDeclaredField("pid")
+                field?.isAccessible = true
+                (field?.get(process) as? Int) ?: -1
             }
-            @Suppress("DEPRECATION")
-            context.sendBroadcast(
-                Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE).apply {
-                    data = Uri.fromFile(file)
-                }
-            )
         } catch (e: Exception) {
-            Log.w(TAG, "MediaStore scan failed (non-critical)", e)
+            -1
         }
     }
 
@@ -268,7 +333,7 @@ class CaptureRepositoryImpl @Inject constructor(
             Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "shareFile failed", e)
-            Result.failure(e)
+            Result.failure(Exception("Share failed: ${e.message}"))
         }
     }
 }
