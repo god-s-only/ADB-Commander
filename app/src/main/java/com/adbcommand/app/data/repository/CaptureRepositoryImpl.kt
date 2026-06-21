@@ -3,15 +3,14 @@ package com.adbcommand.app.data.repository
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
-import com.adbcommand.app.core.CaptureCommands
 import com.adbcommand.app.data.remote.ShizukuManager
 import com.adbcommand.app.domain.models.CapturedScreenshot
 import com.adbcommand.app.domain.models.RecordingSession
@@ -22,9 +21,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -39,6 +38,7 @@ class CaptureRepositoryImpl @Inject constructor(
 
     companion object {
         private const val TAG = "CaptureRepository"
+        private const val SDCARD_TEMP_DIR = "/sdcard/AdbCommander_tmp"
     }
 
     private var recordingProcess: Process? = null
@@ -46,36 +46,56 @@ class CaptureRepositoryImpl @Inject constructor(
     private var recordingStartMs: Long = 0L
 
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override suspend fun takeScreenshot(): Result<CapturedScreenshot> =
         withContext(Dispatchers.IO) {
             try {
-                val cacheDir = context.cacheDir
-                val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-                val cacheFile = File(cacheDir, "screenshot_$timestamp.png")
-                val cachePath = cacheFile.absolutePath
-
-                val result = shizuku.run("screencap -p $cachePath")
-
-                delay(500)
-
-                if (!cacheFile.exists() || cacheFile.length() == 0L) {
-                    return@withContext takeScreenshotFallback(cacheFile, cachePath, timestamp)
+                if (!shizuku.isAvailable()) {
+                    return@withContext Result.failure(
+                        Exception("Shizuku is not running or permission not granted.")
+                    )
                 }
 
-                val bitmap = BitmapFactory.decodeFile(cachePath)
+                val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+                val tempPath = "$SDCARD_TEMP_DIR/screenshot_$timestamp.png"
+
+                shizuku.run("mkdir -p $SDCARD_TEMP_DIR")
+
+                val result = shizuku.run("screencap -p > $tempPath")
+
+                if (!result.success) {
+                    return@withContext Result.failure(
+                        Exception("screencap failed: ${result.error}")
+                    )
+                }
+
+                delay(1000)
+
+                val tempFile = File(tempPath)
+                if (!tempFile.exists() || tempFile.length() == 0L) {
+                    val ls = shizuku.run("ls -la $SDCARD_TEMP_DIR")
+                    Log.e(TAG, "Temp dir after screencap: ${ls.output} | err: ${ls.error}")
+                    return@withContext Result.failure(
+                        Exception("screencap produced no output file.")
+                    )
+                }
+
+                val header = tempFile.inputStream().use { it.readNBytes(4) }
+                Log.d(TAG, "PNG header: ${header.joinToString { "%02X".format(it) }}")
+
+                val bitmap = BitmapFactory.decodeFile(tempPath)
                     ?: return@withContext Result.failure(
-                        Exception("Could not decode screenshot — file may be corrupted")
+                        Exception("Screenshot file exists (${tempFile.length()} bytes) but could not be decoded. Header: ${header.joinToString { "%02X".format(it) }}")
                     )
 
-                val savedPath = saveImageToPublicStorage(cacheFile, timestamp)
-
-                Log.d(TAG, "Screenshot saved: $savedPath")
+                val savedPath = saveImageToPublicStorage(tempFile, timestamp)
+                tempFile.delete()
 
                 Result.success(
                     CapturedScreenshot(
                         bitmap = bitmap,
-                        filePath = savedPath ?: cachePath,
-                        sizeBytes = cacheFile.length()
+                        filePath = savedPath ?: tempPath,
+                        sizeBytes = bitmap.byteCount.toLong()
                     )
                 )
             } catch (e: Exception) {
@@ -83,37 +103,6 @@ class CaptureRepositoryImpl @Inject constructor(
                 Result.failure(Exception("Screenshot failed: ${e.message}"))
             }
         }
-
-    private suspend fun takeScreenshotFallback(
-        cacheFile: File,
-        cachePath: String,
-        timestamp: String
-    ): Result<CapturedScreenshot> {
-        return try {
-            val process = Runtime.getRuntime().exec(arrayOf("screencap", "-p", cachePath))
-            process.waitFor()
-            delay(300)
-
-            if (!cacheFile.exists() || cacheFile.length() == 0L) {
-                return Result.failure(Exception("Screenshot failed: device did not produce output file"))
-            }
-
-            val bitmap = BitmapFactory.decodeFile(cachePath)
-                ?: return Result.failure(Exception("Could not decode screenshot file"))
-
-            val savedPath = saveImageToPublicStorage(cacheFile, timestamp)
-
-            Result.success(
-                CapturedScreenshot(
-                    bitmap = bitmap,
-                    filePath = savedPath ?: cachePath,
-                    sizeBytes = cacheFile.length()
-                )
-            )
-        } catch (e: Exception) {
-            Result.failure(Exception("Screenshot fallback failed: ${e.message}"))
-        }
-    }
 
     private fun saveImageToPublicStorage(file: File, timestamp: String): String? {
         return try {
@@ -148,7 +137,7 @@ class CaptureRepositoryImpl @Inject constructor(
                 dest.absolutePath
             }
         } catch (e: Exception) {
-            Log.w(TAG, "saveImageToPublicStorage failed (non-critical)", e)
+            Log.w(TAG, "saveImageToPublicStorage failed", e)
             null
         }
     }
@@ -174,105 +163,62 @@ class CaptureRepositoryImpl @Inject constructor(
 
 
     override fun startRecording(): Flow<Long> = flow {
-        try {
-            val dir = File(
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES),
-                "AdbCommander"
-            )
-            dir.mkdirs()
-
-            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-            recordingFilePath = "${dir.absolutePath}/recording_$timestamp.mp4"
-            recordingStartMs = System.currentTimeMillis()
-
-            val cmd = arrayOf(
-                "screenrecord",
-                "--bit-rate", "8000000",
-                "--time-limit", "180",
-                recordingFilePath
-            )
-
-            recordingProcess = Runtime.getRuntime().exec(cmd)
-
-            if (recordingProcess == null) {
-                throw Exception("Failed to start screenrecord")
-            }
-
-            Log.d(TAG, "Recording started: $recordingFilePath")
-
-            val start = System.currentTimeMillis()
-
-            while (true) {
-                val process = recordingProcess ?: break
-                try {
-                    process.exitValue()
-                    break
-                } catch (e: IllegalThreadStateException) {
-                    // Still running — emit elapsed time
-                    emit(System.currentTimeMillis() - start)
-                    delay(1000)
-                }
-            }
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Recording flow error", e)
-            throw e
-        } finally {
-            recordingProcess?.destroy()
-            recordingProcess = null
+        if (!shizuku.isAvailable()) {
+            throw Exception("Shizuku is not running or permission not granted.")
         }
+
+        shizuku.run("mkdir -p $SDCARD_TEMP_DIR")
+
+        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        recordingFilePath = "$SDCARD_TEMP_DIR/recording_$timestamp.mp4"
+        recordingStartMs = System.currentTimeMillis()
+
+        val cmd = "screenrecord --bit-rate 8000000 --time-limit 180 $recordingFilePath"
+
+        var shizukuDone = false
+        val recordingJob = kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO) {
+            shizuku.run(cmd)
+            shizukuDone = true
+        }
+
+        Log.d(TAG, "Recording started via Shizuku: $recordingFilePath")
+        val start = System.currentTimeMillis()
+
+        while (!shizukuDone) {
+            emit(System.currentTimeMillis() - start)
+            delay(1000)
+        }
+
+        recordingJob.join()
+
     }.flowOn(Dispatchers.IO)
 
     override suspend fun stopRecording(): Result<RecordingSession> =
         withContext(Dispatchers.IO) {
             try {
                 val durationMs = System.currentTimeMillis() - recordingStartMs
-                try {
-                    val pid = getPid(recordingProcess)
-                    if (pid > 0) {
-                        Runtime.getRuntime().exec(arrayOf("kill", "-2", pid.toString()))
-                        delay(1000)
-                    }
-                } catch (e: Exception) {
-                    Log.w(TAG, "SIGINT failed, falling back to destroy()", e)
-                }
+                val killResult = shizuku.run("pkill -2 screenrecord")
+                Log.d(TAG, "pkill result: ${killResult.output} | ${killResult.error}")
+                delay(2000)
 
-                recordingProcess?.destroy()
-                recordingProcess = null
-
-                delay(1200)
-
-                val file = File(recordingFilePath)
-                if (!file.exists() || file.length() == 0L) {
+                val tempFile = File(recordingFilePath)
+                if (!tempFile.exists() || tempFile.length() == 0L) {
+                    val ls = shizuku.run("ls -la $SDCARD_TEMP_DIR")
+                    Log.e(TAG, "Temp dir after stop: ${ls.output}")
                     return@withContext Result.failure(
-                        Exception("Recording file not found or empty at $recordingFilePath")
+                        Exception("Recording file not found or empty. Path: $recordingFilePath")
                     )
                 }
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    val values = ContentValues().apply {
-                        put(MediaStore.Video.Media.DISPLAY_NAME, file.name)
-                        put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
-                        put(MediaStore.Video.Media.RELATIVE_PATH,
-                            "${Environment.DIRECTORY_MOVIES}/AdbCommander")
-                    }
-                    context.contentResolver.insert(
-                        MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values
-                    )
-                } else {
-                    @Suppress("DEPRECATION")
-                    context.sendBroadcast(
-                        Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE).apply {
-                            data = Uri.fromFile(file)
-                        }
-                    )
-                }
+                val finalPath = saveVideoToPublicStorage(tempFile)
+                tempFile.delete()
 
-                Log.d(TAG, "Recording stopped: $recordingFilePath ($durationMs ms)")
+                val resolvedPath = finalPath ?: recordingFilePath
+                Log.d(TAG, "Recording saved: $resolvedPath ($durationMs ms)")
 
                 Result.success(
                     RecordingSession(
-                        filePath = recordingFilePath,
+                        filePath = resolvedPath,
                         startedAtMs = recordingStartMs,
                         isComplete = true,
                         durationMs = durationMs
@@ -284,20 +230,70 @@ class CaptureRepositoryImpl @Inject constructor(
             }
         }
 
+    private fun saveVideoToPublicStorage(file: File): String? {
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val values = ContentValues().apply {
+                    put(MediaStore.Video.Media.DISPLAY_NAME, file.name)
+                    put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
+                    put(MediaStore.Video.Media.RELATIVE_PATH,
+                        "${Environment.DIRECTORY_MOVIES}/AdbCommander")
+                    put(MediaStore.Video.Media.IS_PENDING, 1)
+                }
+                val uri = context.contentResolver.insert(
+                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values
+                ) ?: return null
+
+                context.contentResolver.openOutputStream(uri)?.use { out ->
+                    file.inputStream().use { it.copyTo(out) }
+                }
+
+                values.clear()
+                values.put(MediaStore.Video.Media.IS_PENDING, 0)
+                context.contentResolver.update(uri, values, null, null)
+                uri.toString()
+            } else {
+                val dir = File(
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES),
+                    "AdbCommander"
+                )
+                dir.mkdirs()
+                val dest = File(dir, file.name)
+                file.copyTo(dest, overwrite = true)
+                @Suppress("DEPRECATION")
+                context.sendBroadcast(
+                    Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE).apply {
+                        data = Uri.fromFile(dest)
+                    }
+                )
+                dest.absolutePath
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "saveVideoToPublicStorage failed", e)
+            null
+        }
+    }
+
     override suspend fun shareRecording(filePath: String): Result<Unit> =
         shareFile(filePath, "video/mp4", "Share Recording")
 
 
     private fun getPid(process: Process?): Int {
+        if (process == null) return -1
         return try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                process?.pid() ?: -1
-            } else {
-                val field = process?.javaClass?.getDeclaredField("pid")
-                field?.isAccessible = true
-                (field?.get(process) as? Int) ?: -1
+            var clazz: Class<*>? = process.javaClass
+            while (clazz != null) {
+                try {
+                    val field = clazz.getDeclaredField("pid")
+                    field.isAccessible = true
+                    return (field.get(process) as? Int) ?: -1
+                } catch (_: NoSuchFieldException) {
+                    clazz = clazz.superclass
+                }
             }
+            -1
         } catch (e: Exception) {
+            Log.w(TAG, "getPid failed: ${e.message}")
             -1
         }
     }
@@ -313,11 +309,15 @@ class CaptureRepositoryImpl @Inject constructor(
                 Exception("File not found: $filePath")
             )
 
-            val uri = FileProvider.getUriForFile(
-                context,
-                "${context.packageName}.fileprovider",
-                file
-            )
+            val uri = if (filePath.startsWith("content://")) {
+                Uri.parse(filePath)
+            } else {
+                FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    file
+                )
+            }
 
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = mimeType
