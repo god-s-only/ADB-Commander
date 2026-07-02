@@ -89,7 +89,11 @@ class CaptureRepositoryImpl @Inject constructor(
                     )
 
                 val savedPath = saveImageToPublicStorage(tempFile, timestamp)
-                tempFile.delete()
+                if (savedPath != null) {
+                    tempFile.delete()
+                } else {
+                    Log.w(TAG, "saveImageToPublicStorage returned null, keeping temp file at $tempPath")
+                }
 
                 Result.success(
                     CapturedScreenshot(
@@ -145,6 +149,11 @@ class CaptureRepositoryImpl @Inject constructor(
     override suspend fun saveToGallery(filePath: String): Result<String> =
         withContext(Dispatchers.IO) {
             try {
+                if (filePath.startsWith("content://")) {
+                    Log.d(TAG, "saveToGallery called with existing MediaStore URI, already saved: $filePath")
+                    return@withContext Result.success(filePath)
+                }
+
                 val file = File(filePath)
                 if (!file.exists()) return@withContext Result.failure(
                     Exception("File not found: $filePath")
@@ -211,7 +220,11 @@ class CaptureRepositoryImpl @Inject constructor(
                 }
 
                 val finalPath = saveVideoToPublicStorage(tempFile)
-                tempFile.delete()
+                if (finalPath != null) {
+                    tempFile.delete()
+                } else {
+                    Log.w(TAG, "saveVideoToPublicStorage returned null, keeping temp file at $recordingFilePath")
+                }
 
                 val resolvedPath = finalPath ?: recordingFilePath
                 Log.d(TAG, "Recording saved: $resolvedPath ($durationMs ms)")
@@ -304,14 +317,13 @@ class CaptureRepositoryImpl @Inject constructor(
         title: String
     ): Result<Unit> = withContext(Dispatchers.Main) {
         try {
-            val file = File(filePath)
-            if (!file.exists()) return@withContext Result.failure(
-                Exception("File not found: $filePath")
-            )
-
             val uri = if (filePath.startsWith("content://")) {
                 Uri.parse(filePath)
             } else {
+                val file = File(filePath)
+                if (!file.exists()) return@withContext Result.failure(
+                    Exception("File not found: $filePath")
+                )
                 FileProvider.getUriForFile(
                     context,
                     "${context.packageName}.fileprovider",
