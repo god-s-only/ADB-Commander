@@ -8,17 +8,17 @@ ADB Commander eliminates the laptop from your Android debugging workflow. Using 
 
 ## Screenshots
 
-| Home | App Manager | Device Info |
-|------|-------------|-------------|
-| <img src="screenshots/home.png" width="200"/> | <img src="screenshots/app_manager.png" width="200"/> | <img src="screenshots/device_info.png" width="200"/> |
+| Home | App Manager 
+|------|-------------|
+| <img src="screenshots/home.png" width="200"/> | <img src="screenshots/app_manager.png" width="200"/> |
 
-| Logcat | ADB Commands | Capture |
-|--------|--------------|---------|
-| <img src="screenshots/logcat.png" width="200"/> | <img src="screenshots/adb_commands.png" width="200"/> | <img src="screenshots/capture.png" width="200"/> |
+| Logcat | ADB Commands |
+|--------|--------------|
+| <img src="screenshots/logcat.png" width="200"/> | <img src="screenshots/adb_commands.png" width="200"/> |
 
-| App Inspector | Process Monitor | Intent Sender |
+| Process Monitor | Intent Sender |
 |---------------|-----------------|---------------|
-| <img src="screenshots/app_inspector.png" width="200"/> | <img src="screenshots/process_monitor.png" width="200"/> | <img src="screenshots/intent_sender.png" width="200"/> |
+| <img src="screenshots/process_monitor.png" width="200"/> | <img src="screenshots/intent_sender.png" width="200"/> |
 
 > Take screenshots on a real device and place them in a `screenshots/` folder at the root of the repo. The README will render them automatically.
 
