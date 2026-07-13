@@ -20,8 +20,6 @@ ADB Commander eliminates the laptop from your Android debugging workflow. Using 
 |---------------|-----------------|
 | <img src="screenshots/process_monitor.png" width="200"/> | <img src="screenshots/intent_sender.png" width="200"/> |
 
-> Take screenshots on a real device and place them in a `screenshots/` folder at the root of the repo. The README will render them automatically.
-
 ---
 
 ## Features
