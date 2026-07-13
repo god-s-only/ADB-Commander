@@ -65,6 +65,13 @@ fun AdbCommanderHome(
             )
         }
     ) {
+        if (state.qrData != null) {
+            QrCodeDialog(
+                data = state.qrData!!,
+                pairingCode = state.pairingCode,
+                onDismiss = { viewModel.onEvent(HomeEvent.DismissQr) }
+            )
+        }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -73,7 +80,6 @@ fun AdbCommanderHome(
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
 
-            // ── Shizuku status (now lives naturally in the flow) ──────────────
             ShizukuStatusCard(
                 state = viewModel.shizukuState.collectAsStateWithLifecycle().value,
                 onRequestPermission = viewModel::onEvent
@@ -186,19 +192,13 @@ fun AdbCommanderHome(
                         }
 
                         FilledTonalButton(
-                            onClick  = { /* TODO: open QR scanner screen */ },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(52.dp),
+                            onClick = { viewModel.onEvent(HomeEvent.GenerateCode) },
+                            modifier = Modifier.weight(1f).height(52.dp),
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            Icon(
-                                Icons.Default.QrCodeScanner,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
+                            Icon(Icons.Default.QrCodeScanner, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(6.dp))
-                            Text("Scan QR", fontWeight = FontWeight.Bold)
+                            Text("Show QR", fontWeight = FontWeight.Bold)
                         }
                     }
                 }
